@@ -12,6 +12,7 @@
     output: "release/${version}",
   },
   files: ["dist-electron", "dist", "out"],
+  afterPack: "./scripts/afterPack.cjs",
   mac: {
     artifactName: "${productName}_${version}.${ext}",
     target: ["dmg", "zip"],
