@@ -1,0 +1,256 @@
+import {
+  renderMedia,
+  RenderMediaOnProgress,
+  selectComposition,
+} from "@remotion/renderer";
+import { app, shell } from "electron";
+import log from "electron-log/main";
+import fs from "fs";
+import os from "os";
+import path from "path";
+
+let warned = false;
+
+/**
+ * Get the path to the bundled Chrome Headless Shell executable.
+ * In packaged apps, we use the Chrome Headless Shell that was bundled during build.
+ * In development, Remotion will use its downloaded version from node_modules.
+ */
+function getBrowserExecutable(): string | null {
+  if (!app.isPackaged) {
+    // In development, let Remotion use its own downloaded browser
+    return null;
+  }
+
+  const appPath = app.getAppPath().replace("app.asar", "app.asar.unpacked");
+  let executableName: string;
+
+  switch (process.platform) {
+    case "darwin":
+      executableName = "chrome-headless-shell";
+      break;
+    case "win32":
+      executableName = "chrome-headless-shell.exe";
+      break;
+    case "linux":
+      executableName = "chrome-headless-shell";
+      break;
+    default:
+      log.error(`Unsupported platform: ${process.platform}`);
+      return null;
+  }
+
+  const browserPath = path.join(appPath, "out/chrome-headless-shell", executableName);
+
+  if (fs.existsSync(browserPath)) {
+    log.info(`Found bundled Chrome Headless Shell at: ${browserPath}`);
+    return browserPath;
+  }
+
+  log.error(`Bundled Chrome Headless Shell not found at: ${browserPath}`);
+  return null;
+}
+
+/**
+ * Checks if the current system is using musl or glibc.
+ * Copied and modified from @remotion/renderer/dist/compositor/is-musl.js
+ *
+ * @returns A boolean indicating whether the system is using musl.
+ */
+function isMusl(): boolean {
+  if (!process.report && typeof Bun !== "undefined") {
+    if (!warned) {
+      log.warn(
+        "Bun limitation: Could not determine if your Linux is using musl or glibc. Assuming glibc."
+      );
+    }
+    warned = true;
+    return false;
+  }
+  const report = process.report?.getReport();
+  if (report && typeof report === "string") {
+    if (!warned) {
+      log.warn(
+        "Bun limitation: Could not determine if your system is using musl or glibc. Assuming glibc."
+      );
+    }
+    warned = true;
+    return false;
+  }
+
+  if (!report) {
+    return false;
+  }
+
+  try {
+    // @ts-ignore
+    const parsedReprot = JSON.parse(report);
+    // Assuming glibcVersionRuntime is not present in musl
+    const { glibcVersionRuntime } = parsedReprot.header || {};
+    return !glibcVersionRuntime;
+  } catch (error) {
+    console.error("Failed to parse report as JSON", error);
+    return false;
+  }
+}
+
+/**
+ * Retrieves the module name based on the current os and architecture.
+ *
+ * Copied and modified from @remotion/renderer/dist/compositor/get-executable-path.js
+ *
+ * @returns The module name.
+ * @throws An error if the operating system or architecture is unsupported.
+ */
+function getModuleName(): string {
+  switch (process.platform) {
+    case "win32":
+      switch (process.arch) {
+        case "x64":
+          return "@remotion/compositor-win32-x64-msvc";
+        default:
+          throw new Error(
+            `Unsupported architecture on Windows: ${process.arch}`
+          );
+      }
+    case "darwin":
+      switch (process.arch) {
+        case "x64":
+          return "@remotion/compositor-darwin-x64";
+        case "arm64":
+          return "@remotion/compositor-darwin-arm64";
+        default:
+          throw new Error(`Unsupported architecture on macOS: ${process.arch}`);
+      }
+    case "linux": {
+      const musl = isMusl();
+      switch (process.arch) {
+        case "x64":
+          if (musl) {
+            return "@remotion/compositor-linux-x64-musl";
+          }
+          return "@remotion/compositor-linux-x64-gnu";
+        case "arm64":
+          if (musl) {
+            return "@remotion/compositor-linux-arm64-musl";
+          }
+          return "@remotion/compositor-linux-arm64-gnu";
+        default:
+          throw new Error(`Unsupported architecture on Linux: ${process.arch}`);
+      }
+    }
+    default:
+      throw new Error(
+        `Unsupported OS: ${process.platform}, architecture: ${process.arch}`
+      );
+  }
+}
+
+// Get the binaries directory
+let binariesDirectory: string | null = null;
+if (app.isPackaged) {
+  const pathName = `node_modules/${getModuleName()}`;
+
+  // Set the binaries directory
+  binariesDirectory = path.join(
+    app.getAppPath().replace("app.asar", "app.asar.unpacked"),
+    pathName
+  );
+  log.info(`Binaries directory: ${binariesDirectory}`);
+}
+
+/**
+ * Renders a video composition with the given input props.
+ * @param inputProps - The input props for the composition.
+ * @returns A Promise that resolves when the video rendering is complete.
+ */
+export default async function render(
+  inputProps: Record<string, unknown>,
+  onProgress?: RenderMediaOnProgress
+) {
+  const compositionId = "HelloWorld";
+
+  log.info(`App is packaged: ${app.isPackaged}`);
+  log.info(`App path: ${app.getAppPath()}`);
+
+  // When packaged, the bundle is unpacked from asar, so we need to use the unpacked path
+  const bundleLocation = app.isPackaged
+    ? path.join(
+        app.getAppPath().replace("app.asar", "app.asar.unpacked"),
+        "out/remotion-bundle"
+      )
+    : path.join(app.getAppPath(), "out/remotion-bundle");
+  log.info(`Bundle location: ${bundleLocation}`);
+  log.info(`Binaries directory: ${binariesDirectory}`);
+
+  // Check if bundle location exists
+  const bundleExists = fs.existsSync(bundleLocation);
+  log.info(`Bundle exists: ${bundleExists}`);
+  if (bundleExists) {
+    const bundleContents = fs.readdirSync(bundleLocation);
+    log.info(`Bundle contents: ${bundleContents.join(", ")}`);
+  }
+
+  // Check if binaries directory exists
+  if (binariesDirectory) {
+    const binariesExist = fs.existsSync(binariesDirectory);
+    log.info(`Binaries directory exists: ${binariesExist}`);
+    if (binariesExist) {
+      const binariesContents = fs.readdirSync(binariesDirectory);
+      log.info(`Binaries contents: ${binariesContents.join(", ")}`);
+    }
+  }
+
+  // Get browser executable (bundled Chrome Headless Shell for packaged apps)
+  const browserExecutable = getBrowserExecutable();
+  log.info(`Browser executable: ${browserExecutable}`);
+
+  if (app.isPackaged && !browserExecutable) {
+    throw new Error(
+      "Chrome Headless Shell not found. The app may not have been built correctly."
+    );
+  }
+
+  // Configure chromium options
+  const chromiumOptions = {
+    enableMultiProcessOnLinux: true,
+  };
+
+  log.info(`Selecting composition: ${compositionId}`);
+  // Get the composition to render
+  const composition = await selectComposition({
+    serveUrl: bundleLocation,
+    id: compositionId,
+    inputProps,
+    binariesDirectory,
+    browserExecutable,
+    chromiumOptions,
+  });
+  log.info(`Composition selected: ${composition.id}`);
+
+  // Get the downloads folder path
+  const homeDirectory = os.homedir();
+  const downloadsFolderPath = path.join(
+    homeDirectory,
+    "Downloads/output-remotion.mp4"
+  );
+  log.info(`Downloads folder path: ${downloadsFolderPath}`);
+
+  // Render the video with input props
+  log.info(`Rendering video: ${compositionId}.mp4`);
+  await renderMedia({
+    composition,
+    serveUrl: bundleLocation,
+    codec: "h264",
+    outputLocation: downloadsFolderPath,
+    inputProps,
+    binariesDirectory,
+    browserExecutable,
+    chromiumOptions,
+    onProgress,
+  });
+  log.info(`Video rendered: ${compositionId}.mp4`);
+
+  shell.showItemInFolder(downloadsFolderPath);
+  log.info("Shell opened /downloads folder");
+}
