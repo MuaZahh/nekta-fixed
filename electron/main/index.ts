@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { app, BrowserWindow, ipcMain, shell, Menu } from "electron";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
@@ -84,7 +84,39 @@ async function createWindow() {
   update(win);
 }
 
-app.whenReady().then(createWindow);
+function createMenu() {
+  const isMac = process.platform === "darwin";
+
+  const template: Electron.MenuItemConstructorOptions[] = isMac
+    ? [
+        {
+          label: app.getName(),
+          submenu: [
+            { role: "about" },
+            { type: "separator" },
+            { role: "hide" },
+            { role: "hideOthers" },
+            { role: "unhide" },
+            { type: "separator" },
+            { role: "quit" },
+          ],
+        },
+      ]
+    : [
+        {
+          label: "File",
+          submenu: [{ role: "quit" }],
+        },
+      ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
+
+app.whenReady().then(() => {
+  createMenu();
+  createWindow();
+});
 
 app.on("window-all-closed", () => {
   win = null;

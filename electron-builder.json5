@@ -2,12 +2,9 @@
  * @see https://www.electron.build/configuration/configuration
  */
 {
-  appId: "com.electron-vite.remotion",
+  appId: "dev.webmonch.nekta",
   asar: true,
-  asarUnpack: [
-    "out/**/*",
-    "node_modules/@remotion/compositor-*/**/*",
-  ],
+  asarUnpack: ["out/**/*", "node_modules/@remotion/compositor-*/**/*"],
   directories: {
     output: "release/${version}",
   },
