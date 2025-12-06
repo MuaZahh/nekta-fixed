@@ -16,6 +16,7 @@
   mac: {
     artifactName: "${productName}_${version}.${ext}",
     target: ["dmg", "zip"],
+    identity: null,
   },
   win: {
     target: [

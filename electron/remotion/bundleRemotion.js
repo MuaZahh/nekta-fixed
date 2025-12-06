@@ -29,11 +29,18 @@ async function bundleRemotion() {
     const browserResult = await ensureBrowser({
       onBrowserDownload: () => {
         console.log("Downloading Chrome Headless Shell...");
-        return () => {
-          console.log("Chrome Headless Shell download complete.");
+        return {
+          onProgress: (progress) => {
+            // progress contains { percent, downloadedBytes, totalBytes }
+            if (progress.percent) {
+              process.stdout.write(`\rDownload progress: ${Math.round(progress.percent * 100)}%`);
+            }
+          },
+          version: null,
         };
       },
     });
+    console.log("\nChrome Headless Shell download complete.");
     console.log("Chrome Headless Shell location:", browserResult);
 
     // ensureBrowser returns { path: string, type: string }

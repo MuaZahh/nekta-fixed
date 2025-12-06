@@ -22,14 +22,14 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@remotion/bundler": "4.0.380",
-    "@remotion/cli": "4.0.380",
-    "@remotion/player": "4.0.380",
-    "@remotion/renderer": "4.0.380",
-    "@remotion/zod-types": "4.0.380",
-    "electron-log": "^5.1.5",
-    "electron-updater": "^6.1.8",
-    "remotion": "4.0.380"
+    "@remotion/bundler": "4.0.382",
+    "@remotion/cli": "4.0.382",
+    "@remotion/player": "4.0.382",
+    "@remotion/renderer": "4.0.382",
+    "@remotion/zod-types": "4.0.382",
+    "electron-log": "^5.4.3",
+    "electron-updater": "^6.6.2",
+    "remotion": "4.0.382"
   },
   "devDependencies": {
     "@playwright/test": "^1.42.1",
@@ -38,14 +38,14 @@
     "@types/react-dom": "^18.2.21",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.18",
-    "electron": "^31.1.0",
-    "electron-builder": "^24.13.3",
+    "electron": "^39.2.6",
+    "electron-builder": "^26.0.12",
     "postcss": "^8.4.35",
     "postcss-import": "^16.0.1",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.4.2",
-    "vite": "^5.1.5",
-    "vite-plugin-electron": "^0.28.4",
-    "vite-plugin-electron-renderer": "^0.14.5"
+    "vite": "^7.2.6",
+    "vite-plugin-electron": "^0.29.0",
+    "vite-plugin-electron-renderer": "^0.14.6"
   }
 }
