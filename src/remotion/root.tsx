@@ -2,7 +2,7 @@ import "../App.css";
 
 import { Composition } from "remotion";
 import calculateRemotionMetadata from "./calculate-remotion-metadata";
-import { HelloWorld, myCompSchema } from "./video/HelloWorld";
+import { HelloWorld, myCompSchema } from "./templates/demo/HelloWorld";
 
 function RemotionRoot() {
   return (

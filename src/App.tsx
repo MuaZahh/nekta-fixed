@@ -4,7 +4,8 @@ import { Player } from "@remotion/player";
 import { StitchingState } from "@remotion/renderer";
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { HelloWorld, myCompSchema } from "./remotion/video/HelloWorld";
+import { HelloWorld, myCompSchema } from "./remotion/templates/demo/HelloWorld";
+import { LoginScreen } from "./components/login/LoginScreen";
 
 interface RenderProgress {
   renderedFrames: number;
@@ -91,6 +92,8 @@ function App() {
 
   return (
     <div className="App">
+      <LoginScreen/>
+      
       <h1>Electron + Vite + React + Remotion</h1>
       <div className="flex flex-col items-center gap-4">
         <Player

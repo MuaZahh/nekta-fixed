@@ -1,6 +1,6 @@
 import { CalculateMetadataFunction } from "remotion";
 import { z } from "zod";
-import { myCompSchema } from "./video/HelloWorld";
+import { myCompSchema } from "./templates/demo/HelloWorld";
 
 /**
  * Calculates the metadata for a video.
