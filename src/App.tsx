@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { HelloWorld, myCompSchema } from "./remotion/templates/demo/HelloWorld";
 import { LoginScreen } from "./components/login/LoginScreen";
+import { Sidebar } from "./components/sidebar/Sidebar";
 
 interface RenderProgress {
   renderedFrames: number;
@@ -91,10 +92,16 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <LoginScreen/>
-      
-      <h1>Electron + Vite + React + Remotion</h1>
+    <div className="w-full h-full">
+      <LoginScreen />
+
+      <Sidebar />
+
+      <main className="content">
+        {/* Content goes here */}
+      </main>
+
+      {/* <h1>Electron + Vite + React + Remotion</h1>
       <div className="flex flex-col items-center gap-4">
         <Player
           component={HelloWorld}
@@ -158,7 +165,7 @@ function App() {
             </div>
           </>
         )}
-      </div>
+      </div> */}
     </div>
   );
 }
