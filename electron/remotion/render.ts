@@ -3,11 +3,12 @@ import {
   RenderMediaOnProgress,
   selectComposition,
 } from "@remotion/renderer";
-import { app, shell } from "electron";
+import { app } from "electron";
 import log from "electron-log/main";
 import fs from "fs";
-import os from "os";
 import path from "path";
+import { eq } from "drizzle-orm";
+import { getDb, generateUid, schema } from "../libs/db";
 
 let warned = false;
 
@@ -228,21 +229,22 @@ export default async function render(
   });
   log.info(`Composition selected: ${composition.id}`);
 
-  // Get the downloads folder path
-  const homeDirectory = os.homedir();
-  const downloadsFolderPath = path.join(
-    homeDirectory,
-    "Downloads/output-remotion.mp4"
-  );
-  log.info(`Downloads folder path: ${downloadsFolderPath}`);
+  const contentDir = path.join(app.getPath("userData"), "media");
+  if (!fs.existsSync(contentDir)) {
+    fs.mkdirSync(contentDir, { recursive: true });
+  }
 
-  // Render the video with input props
+  const mediaUid = generateUid();
+  const fileName = `${mediaUid}.mp4`;
+  const outputPath = path.join(contentDir, fileName);
+  log.info(`Output path: ${outputPath}`);
+
   log.info(`Rendering video: ${compositionId}.mp4`);
   await renderMedia({
     composition,
     serveUrl: bundleLocation,
     codec: "h264",
-    outputLocation: downloadsFolderPath,
+    outputLocation: outputPath,
     inputProps,
     binariesDirectory,
     browserExecutable,
@@ -251,6 +253,30 @@ export default async function render(
   });
   log.info(`Video rendered: ${compositionId}.mp4`);
 
-  shell.showItemInFolder(downloadsFolderPath);
-  log.info("Shell opened /downloads folder");
+  const db = getDb();
+
+  const defaultLibrary = db
+    .select()
+    .from(schema.libraries)
+    .where(eq(schema.libraries.isDefault, true))
+    .get();
+
+  if (!defaultLibrary) {
+    throw new Error("Default library not found");
+  }
+
+  const durationMs = Math.round((composition.durationInFrames / composition.fps) * 1000);
+
+  db.insert(schema.mediaAssets).values({
+    uid: mediaUid,
+    libraryId: defaultLibrary.id,
+    name: `Reddit Story ${new Date().toLocaleDateString()}`,
+    filePath: outputPath,
+    type: "video",
+    duration: durationMs,
+  }).run();
+
+  log.info(`Media asset saved to database with uid: ${mediaUid}`);
+
+  return { uid: mediaUid, filePath: outputPath };
 }

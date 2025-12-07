@@ -1,9 +1,8 @@
-import { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import {
   HouseIcon,
   FolderOpenIcon,
-  UsersIcon,
+    UsersIcon,
   MusicNotesIcon,
   ChartLineIcon,
   GearIcon,
@@ -11,13 +10,14 @@ import {
   CaretRightIcon,
 } from '@phosphor-icons/react'
 import { SidebarButton } from './SidebarButton'
+import { useRouter, AppRoute } from '../../state/router'
+import { useState } from 'react'
 import loginLogo from '/login-logo.svg'
 
 interface SidebarItem {
-  id: string
+  id: AppRoute
   label: string
   icon: React.ReactNode
-  onClick?: () => void
 }
 
 const menuItems: SidebarItem[] = [
@@ -34,7 +34,10 @@ const bottomItems: SidebarItem[] = [
 
 export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false)
-  const [activeId, setActiveId] = useState('home')
+  const route = useRouter((state) => state.route)
+  const setRoute = useRouter((state) => state.setRoute)
+
+  const activeId = route === 'reddit-story' ? 'home' : route
 
   return (
     <aside
@@ -84,10 +87,7 @@ export const Sidebar = () => {
                 label={item.label}
                 active={activeId === item.id}
                 collapsed={collapsed}
-                onClick={() => {
-                  setActiveId(item.id)
-                  item.onClick?.()
-                }}
+                onClick={() => setRoute(item.id)}
               />
             </li>
           ))}
@@ -103,10 +103,7 @@ export const Sidebar = () => {
                 label={item.label}
                 active={activeId === item.id}
                 collapsed={collapsed}
-                onClick={() => {
-                  setActiveId(item.id)
-                  item.onClick?.()
-                }}
+                onClick={() => setRoute(item.id)}
               />
             </li>
           ))}

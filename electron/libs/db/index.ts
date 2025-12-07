@@ -3,8 +3,12 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { eq } from 'drizzle-orm'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { app } from 'electron'
 import * as schema from './schema'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const getDbPath = () => {
   const userDataPath = app.getPath('userData')

@@ -1,6 +1,6 @@
 import { Player } from '@remotion/player'
 import { StitchingState } from '@remotion/renderer'
-import { XIcon, DownloadSimpleIcon } from '@phosphor-icons/react'
+import { XIcon, DownloadSimpleIcon, FolderOpenIcon } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import { HelloWorld, myCompSchema } from '../remotion/templates/demo/HelloWorld'
 import { useRouter } from '../state/router'
@@ -143,11 +143,18 @@ export const RedditStoryPage = () => {
                 </div>
               </div>
             ) : renderProgress && !isRendering && renderProgress.progress === 1 ? (
-              <div className="bg-white rounded-2xl p-5 text-center">
-                <p className="text-neutral-900 font-medium">Render Complete!</p>
-                <p className="text-sm text-neutral-500 mt-1">
-                  Encoded in {renderProgress.encodedDoneIn}ms
+              <div className="bg-white rounded-2xl p-5">
+                <p className="text-neutral-900 font-medium text-center">Render Complete!</p>
+                <p className="text-sm text-neutral-500 mt-1 text-center">
+                  Saved to Library
                 </p>
+                <button
+                  onClick={() => setRoute('library')}
+                  className="w-full flex items-center justify-center gap-2 mt-4 bg-black text-white font-medium py-3 px-6 rounded-xl hover:bg-neutral-800 active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  <FolderOpenIcon size={20} weight="bold" />
+                  Open Library
+                </button>
               </div>
             ) : (
               <button

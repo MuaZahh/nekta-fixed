@@ -1,11 +1,22 @@
-import { app, BrowserWindow, ipcMain, shell, Menu } from "electron";
+import { app, BrowserWindow, ipcMain, shell, Menu, protocol, net } from "electron";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { update } from "./update";
 
 import "../handlers/renderHandler";
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: "media",
+    privileges: {
+      secure: true,
+      supportFetchAPI: true,
+      stream: true,
+    },
+  },
+]);
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -118,6 +129,11 @@ function createMenu() {
 }
 
 app.whenReady().then(() => {
+  protocol.handle("media", (request) => {
+    const filePath = decodeURIComponent(request.url.replace("media://", ""));
+    return net.fetch(pathToFileURL(filePath).toString());
+  });
+
   createMenu();
   createWindow();
 });
