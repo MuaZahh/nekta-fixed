@@ -7,6 +7,7 @@ import { z } from "zod";
 import { HelloWorld, myCompSchema } from "./remotion/templates/demo/HelloWorld";
 import { LoginScreen } from "./components/login/LoginScreen";
 import { Sidebar } from "./components/sidebar/Sidebar";
+import { HomePage } from "./pages/HomePage";
 
 interface RenderProgress {
   renderedFrames: number;
@@ -92,13 +93,13 @@ function App() {
   };
 
   return (
-    <div className="w-full h-full absolute inset-0 overflow-hidden">
+    <div className="flex w-full h-full absolute inset-0 overflow-hidden">
       <LoginScreen />
 
       <Sidebar />
 
-      <main className="content">
-        {/* Content goes here */}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 scrollbar-none">
+        <HomePage />
       </main>
 
       {/* <h1>Electron + Vite + React + Remotion</h1>
