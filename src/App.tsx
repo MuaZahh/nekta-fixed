@@ -92,7 +92,7 @@ function App() {
   };
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full absolute inset-0 overflow-hidden">
       <LoginScreen />
 
       <Sidebar />

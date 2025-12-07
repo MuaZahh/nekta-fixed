@@ -4,6 +4,7 @@ import Lottie from 'react-lottie'
 import * as animationData from '../../assets/arrow_right_line.json'
 import { useAuthStore } from '../../state/auth'
 import { motion } from 'motion/react'
+import loginLogo from '/login-logo.svg'
 
 export const LoginScreen = () => {
   const authStore = useAuthStore()
@@ -32,7 +33,7 @@ export const LoginScreen = () => {
       <LoginCanvas />
 
       <div className="login-screen-container">
-        <img src="/login-logo.svg" className="login-logo" />
+        <img src={loginLogo} className="login-logo" />
 
         <button onClick={onLoginClick} className="login-button">
           <span>Start</span>

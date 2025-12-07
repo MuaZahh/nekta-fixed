@@ -101,6 +101,10 @@ function createMenu() {
             { role: "quit" },
           ],
         },
+        {
+          label: "File",
+          submenu: [{ role: "close" }],
+        },
       ]
     : [
         {

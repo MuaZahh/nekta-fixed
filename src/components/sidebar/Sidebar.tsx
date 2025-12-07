@@ -11,6 +11,7 @@ import {
   CaretRightIcon,
 } from '@phosphor-icons/react'
 import { SidebarButton } from './SidebarButton'
+import loginLogo from '/login-logo.svg'
 
 interface SidebarItem {
   id: string
@@ -59,7 +60,7 @@ export const Sidebar = () => {
         ) : (
           <>
             <div className="flex items-center overflow-hidden pl-1">
-              <img src="/login-logo.svg" alt="Nekta" className="h-6 w-auto" />
+              <img src={loginLogo} alt="Nekta" className="h-6 w-auto" />
             </div>
             <button
               className="flex items-center justify-center w-9 h-9 p-0 rounded-[10px] cursor-pointer text-neutral-500 transition-colors duration-150 hover:bg-neutral-100 hover:text-black shrink-0"
