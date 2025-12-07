@@ -4,7 +4,7 @@
 {
   appId: "dev.webmonch.nekta",
   asar: true,
-  asarUnpack: ["out/**/*", "node_modules/@remotion/compositor-*/**/*"],
+  asarUnpack: ["out/**/*", "node_modules/@remotion/compositor-*/**/*", "node_modules/better-sqlite3/**/*"],
   directories: {
     output: "release/${version}",
   },

@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 import {
   HouseIcon,
-  FolderSimpleIcon,
-  LayoutIcon,
-  FilmReelIcon,
-  ExportIcon,
+  FolderOpenIcon,
+  UsersIcon,
+  MusicNotesIcon,
+  ChartLineIcon,
   GearIcon,
   CaretLeftIcon,
   CaretRightIcon,
@@ -22,10 +22,10 @@ interface SidebarItem {
 
 const menuItems: SidebarItem[] = [
   { id: 'home', label: 'Home', icon: <HouseIcon size={20} /> },
-  { id: 'projects', label: 'Projects', icon: <FolderSimpleIcon size={20} /> },
-  { id: 'templates', label: 'Templates', icon: <LayoutIcon size={20} /> },
-  { id: 'media', label: 'Media', icon: <FilmReelIcon size={20} /> },
-  { id: 'exports', label: 'Exports', icon: <ExportIcon size={20} /> },
+  { id: 'library', label: 'Library', icon: <FolderOpenIcon size={20} /> },
+  { id: 'avatars', label: 'UGC Avatars', icon: <UsersIcon size={20} /> },
+  { id: 'music', label: 'Music', icon: <MusicNotesIcon size={20} /> },
+  { id: 'usage', label: 'Usage', icon: <ChartLineIcon size={20} /> },
 ]
 
 const bottomItems: SidebarItem[] = [

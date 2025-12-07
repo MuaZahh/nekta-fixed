@@ -1,9 +1,16 @@
-import { rmSync } from 'node:fs'
+import { rmSync, cpSync } from 'node:fs'
 import path from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import electron from 'vite-plugin-electron/simple'
 import pkg from './package.json'
+
+const copyMigrations = () => ({
+  name: 'copy-migrations',
+  closeBundle() {
+    cpSync('electron/libs/db/migrations', 'dist-electron/main/migrations', { recursive: true })
+  }
+})
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => {
@@ -41,6 +48,7 @@ export default defineConfig(({ command }) => {
                 external: Object.keys('dependencies' in pkg ? pkg.dependencies : {}),
               },
             },
+            plugins: [copyMigrations()],
           },
         },
         preload: {
