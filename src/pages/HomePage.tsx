@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useRouter, AppRoute } from '../state/router'
 
 type ContentType = 'videos' | 'images' | 'other'
 
@@ -6,23 +7,24 @@ interface Suggestion {
   id: string
   title: string
   description: string
+  route?: AppRoute
 }
 
 const suggestions: Record<ContentType, Suggestion[]> = {
   videos: [
-    { id: 'v1', title: 'Product Demo', description: 'Showcase your product with a professional walkthrough' },
-    { id: 'v2', title: 'Social Reel', description: 'Vertical video optimized for Instagram & TikTok' },
-    { id: 'v3', title: 'Explainer', description: 'Break down complex topics with animated visuals' },
-    { id: 'v4', title: 'Testimonial', description: 'Customer stories that build trust' },
+    { id: 'v1', title: 'AI Story', description: 'Generate narrated stories with AI voices and visuals' },
+    { id: 'v2', title: 'Reddit Story', description: 'Turn Reddit posts into viral video content', route: 'reddit-story' },
+    { id: 'v3', title: 'Transcribe', description: 'Convert speech to text from any video or audio' },
+    { id: 'v4', title: 'Add Captions', description: 'Auto-generate and style subtitles for your videos' },
+    { id: 'v5', title: 'Fake Texts', description: 'Create realistic text message conversation videos' },
   ],
   images: [
-    { id: 'i1', title: 'Social Post', description: 'Eye-catching graphics for your feed' },
-    { id: 'i2', title: 'Story Slide', description: 'Vertical designs for ephemeral content' },
-    { id: 'i3', title: 'Banner Ad', description: 'Display ads that convert' },
+    { id: 'i1', title: 'Upscale', description: 'Enhance image resolution with AI' },
+    { id: 'i2', title: 'Restore', description: 'Fix old or damaged photos automatically' },
+    { id: 'i3', title: 'Remove Background', description: 'Isolate subjects with one click' },
   ],
   other: [
-    { id: 'o1', title: 'Audio Clip', description: 'Voiceovers and sound effects' },
-    { id: 'o2', title: 'Script', description: 'AI-generated scripts for your content' },
+    { id: 'o1', title: 'Text to Speech', description: 'Convert text into natural-sounding voices' },
   ],
 }
 
@@ -36,6 +38,7 @@ export const HomePage = () => {
   const [activeTab, setActiveTab] = useState<ContentType>('videos')
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 })
   const tabRefs = useRef<Map<ContentType, HTMLButtonElement>>(new Map())
+  const setRoute = useRouter((state) => state.setRoute)
 
   useEffect(() => {
     const activeButton = tabRefs.current.get(activeTab)
@@ -100,6 +103,7 @@ export const HomePage = () => {
               style={{
                 animationDelay: `${index * 50}ms`,
               }}
+              onClick={() => suggestion.route && setRoute(suggestion.route)}
             >
               <h3 className="text-base font-medium text-neutral-900 leading-none group-hover:text-black m-0">
                 {suggestion.title}
