@@ -48,7 +48,6 @@ export const LibraryPage = () => {
       video.pause()
       setPlayingUid(null)
     } else {
-      // Pause any currently playing video
       if (playingUid) {
         const currentVideo = videoRefs.current.get(playingUid)
         currentVideo?.pause()
@@ -75,7 +74,7 @@ export const LibraryPage = () => {
   const formatDate = (date: Date) => {
     const d = new Date(date)
     return d.toLocaleDateString('en-US', {
-      month: 'short',
+      month: 'numeric',
       day: 'numeric',
       year: 'numeric',
       hour: '2-digit',
@@ -111,54 +110,59 @@ export const LibraryPage = () => {
           {media.map((item) => (
             <div
               key={item.uid}
-              className="bg-white rounded-2xl overflow-hidden group"
+              className="rounded-2xl overflow-hidden group"
             >
               {/* Video Preview */}
               <div
-                className="relative aspect-video bg-neutral-900 cursor-pointer"
+                className="relative aspect-video  cursor-pointer rounded-2xl overflow-hidden"
                 onClick={() => handlePlayToggle(item.uid)}
               >
                 <video
                   ref={setVideoRef(item.uid)}
                   src={`media://${encodeURIComponent(item.filePath)}`}
-                  className="w-full h-full object-contain"
+                  className="absolute inset-0 w-full h-full object-cover block"
                   onEnded={() => setPlayingUid(null)}
                   playsInline
                 />
                 {playingUid !== item.uid && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center">
-                      <PlayIcon size={24} className="text-black ml-1" />
+                      <PlayIcon size={24} className="text-black" />
                     </div>
                   </div>
                 )}
+                {/* Action buttons */}
+                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDownload(item.uid)
+                    }}
+                    className="flex items-center justify-center w-8 h-8 bg-black/60 hover:bg-black/80 text-white rounded-lg transition-colors cursor-pointer"
+                    aria-label="Download"
+                  >
+                    <DownloadSimpleIcon size={16} weight="bold" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete(item.uid)
+                    }}
+                    className="flex items-center justify-center w-8 h-8 bg-black/60 hover:bg-red-500 text-white rounded-lg transition-colors cursor-pointer"
+                    aria-label="Delete"
+                  >
+                    <TrashIcon size={16} />
+                  </button>
+                </div>
                 <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/70 rounded text-xs text-white">
                   {formatDuration(item.duration)}
                 </div>
               </div>
 
               {/* Info */}
-              <div className="p-4">
-                <h3 className="font-medium text-neutral-900 truncate">{item.name}</h3>
-                <p className="text-sm text-neutral-500 mt-1">{formatDate(item.createdAt)}</p>
-
-                {/* Actions */}
-                <div className="flex items-center gap-2 mt-3">
-                  <button
-                    onClick={() => handleDownload(item.uid)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-black text-white text-sm font-medium rounded-lg hover:bg-neutral-800 transition-colors cursor-pointer"
-                  >
-                    <DownloadSimpleIcon size={16} weight="bold" />
-                    Download
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.uid)}
-                    className="flex items-center justify-center w-9 h-9 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                    aria-label="Delete"
-                  >
-                    <TrashIcon size={18} />
-                  </button>
-                </div>
+              <div className="py-2 px-1">
+                <div className="font-medium text-neutral-900 text-sm truncate">{item.name}</div>
+                <p className="text-xs text-neutral-500 mt-0">{formatDate(item.createdAt)}</p>
               </div>
             </div>
           ))}
