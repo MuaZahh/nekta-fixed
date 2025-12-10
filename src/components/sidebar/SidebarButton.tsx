@@ -18,8 +18,8 @@ export const SidebarButton = ({
   return (
     <button
       className={twMerge(
-        'flex items-center w-full rounded-[10px] cursor-pointer text-sm font-medium text-left transition-colors duration-150 focus:outline-none',
-        collapsed ? 'justify-center p-2' : 'gap-3 px-2.5 py-2',
+        'flex items-center w-full rounded-lg cursor-pointer text-sm font-medium text-left transition-all duration-200 focus:outline-none',
+        collapsed ? 'justify-center p-1.5' : 'gap-2.5 py-1.5 px-2.5',
         active
           ? 'bg-neutral-100 text-black'
           : 'text-neutral-600 hover:bg-neutral-100 hover:text-black'

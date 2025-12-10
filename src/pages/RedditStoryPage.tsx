@@ -1,9 +1,10 @@
 import { Player } from '@remotion/player'
 import { StitchingState } from '@remotion/renderer'
-import { XIcon, DownloadSimpleIcon, FolderOpenIcon } from '@phosphor-icons/react'
+import { DownloadSimpleIcon, FolderOpenIcon } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import { HelloWorld, myCompSchema } from '../remotion/templates/demo/HelloWorld'
 import { useRouter } from '../state/router'
+import { PageLayout } from '../components/PageLayout'
 import { z } from 'zod'
 
 interface RenderProgress {
@@ -83,20 +84,8 @@ export const RedditStoryPage = () => {
   const progressPercent = renderProgress ? Math.round(renderProgress.progress * 100) : 0
 
   return (
-    <div className="flex flex-col items-center w-full pt-8">
-      <div className="w-full max-w-[800px] px-4">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-medium text-neutral-900">Reddit Story</h1>
-          <button
-            onClick={() => setRoute('home')}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-neutral-200/60 text-neutral-600 hover:bg-neutral-300 hover:text-neutral-900 transition-colors cursor-pointer"
-            aria-label="Close"
-          >
-            <XIcon size={20} />
-          </button>
-        </div>
-
-        <div className="flex flex-col items-center gap-6">
+    <PageLayout title="Reddit Story">
+      <div className="flex flex-col items-center gap-6">
           <Player
             component={HelloWorld}
             inputProps={defaultProps}
@@ -168,7 +157,6 @@ export const RedditStoryPage = () => {
             )}
           </div>
         </div>
-      </div>
-    </div>
+    </PageLayout>
   )
 }
