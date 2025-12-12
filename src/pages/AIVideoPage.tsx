@@ -537,7 +537,7 @@ export const AIVideoPage = () => {
           <Button
             variant="outline"
             onClick={onAddSlide}
-            className="w-full border-dashed"
+            className="w-full"
           >
             <PlusIcon size={16} weight="bold" />
             Add Slide
