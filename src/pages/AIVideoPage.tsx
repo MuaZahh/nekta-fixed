@@ -1,4 +1,4 @@
-import { PageLayout } from '../components/PageLayout'
+import { Player } from '@remotion/player'
 import { useState, useRef, useEffect } from 'react'
 import {
   XIcon,
@@ -9,7 +9,12 @@ import {
   StopIcon,
   CaretDownIcon,
   ImageIcon,
+  DownloadSimpleIcon,
+  VideoCameraIcon,
 } from '@phosphor-icons/react'
+import { useRouter } from '../state/router'
+import { HelloWorld, myCompSchema } from '../remotion/templates/demo/HelloWorld'
+import { z } from 'zod'
 import {
   Select,
   SelectContent,
@@ -220,6 +225,19 @@ const mockGenerateImage = async (
   return `https://picsum.photos/seed/${Math.random()}/400/711`
 }
 
+const defaultPlayerProps: z.infer<typeof myCompSchema> = {
+  titleText: 'AI Video Preview',
+  titleColor: '#000000',
+  logoColor1: '#91EAE4',
+  logoColor2: '#86A8E7',
+  metadata: {
+    durationInFrames: 150,
+    compositionWidth: 1080,
+    compositionHeight: 1920,
+    fps: 30,
+  },
+}
+
 const SlideItem = ({
   slide,
   index,
@@ -368,6 +386,7 @@ const Section = ({
 }
 
 export const AIVideoPage = () => {
+  const setRoute = useRouter((state) => state.setRoute)
   const [slides, setSlides] = useState<AiVideoSlide[]>([])
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardStep, setWizardStep] = useState<WizardStep>('create-titles')
@@ -387,6 +406,7 @@ export const AIVideoPage = () => {
   const [topic, setTopic] = useState<string>('')
   const [generatedTitles, setGeneratedTitles] = useState<string[]>([])
   const [selectedTitle, setSelectedTitle] = useState<string>('')
+  const [isPreviewGenerated, setIsPreviewGenerated] = useState(false)
 
   const onAddSlide = () => {
     setSlides((prev) => [
@@ -459,10 +479,26 @@ export const AIVideoPage = () => {
   )
 
   return (
-    <PageLayout title="AI Video">
-      <div className="flex flex-col items-center gap-5 pb-8">
-        {/* Settings Section */}
-        <Section title="Video Settings">
+    <div className="flex flex-col h-full w-full">
+      {/* Fixed Header */}
+      <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-neutral-100 bg-[#F3F3EE]">
+        <h1 className="text-xl font-medium text-neutral-900">AI Video</h1>
+        <button
+          onClick={() => setRoute('home')}
+          className="flex items-center justify-center w-8 h-8 rounded-lg bg-neutral-200/60 text-neutral-600 hover:bg-neutral-300 hover:text-neutral-900 transition-colors cursor-pointer"
+          aria-label="Close"
+        >
+          <XIcon size={18} />
+        </button>
+      </div>
+
+      {/* Two Column Layout */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Column - Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-200 [&::-webkit-scrollbar-track]:my-2">
+          <div className="flex flex-col gap-5 max-w-[640px] mx-auto pb-8">
+            {/* Settings Section */}
+            <Section title="Video Settings">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>Voice</Label>
@@ -562,6 +598,51 @@ export const AIVideoPage = () => {
             Add Slide
           </Button>
         </Section>
+          </div>
+        </div>
+
+        {/* Right Column - Video Preview */}
+        <div className="w-[30%] flex-shrink-0 border-l border-neutral-100 p-3 flex flex-col items-center justify-center overflow-hidden gap-2">
+          <Label>Preview</Label>
+          {isPreviewGenerated ? (
+            <Player
+              component={HelloWorld}
+              inputProps={defaultPlayerProps}
+              style={{
+                width: '100%',
+                maxHeight: '100%',
+                aspectRatio: aspectRatio.replace(':', '/'),
+                borderRadius: 12,
+                overflow: 'hidden',
+              }}
+              controls
+              {...defaultPlayerProps.metadata}
+            />
+          ) : (
+            <div
+              className="w-full bg-neutral-100 border rounded-xl flex items-center justify-center"
+              style={{
+                maxHeight: '100%',
+                aspectRatio: aspectRatio.replace(':', '/'),
+              }}
+            >
+              <VideoCameraIcon size={48} className="text-neutral-300" />
+            </div>
+          )}
+          <Button
+            variant="default"
+            className="border"
+            size="sm"
+            onClick={() => setIsPreviewGenerated(true)}
+          >
+            <SparkleIcon />
+            Generate preview
+          </Button>
+          <Button variant="default" className="border" size="sm">
+            <DownloadSimpleIcon />
+            Save video
+          </Button>
+        </div>
       </div>
 
       {/* Wizard Modal */}
@@ -693,6 +774,6 @@ export const AIVideoPage = () => {
           </div>
         </div>
       )}
-    </PageLayout>
+    </div>
   )
 }
