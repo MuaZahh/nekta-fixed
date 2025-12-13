@@ -16,10 +16,10 @@ export const PageLayout = ({ title, children }: PageLayoutProps) => {
           <h1 className="text-2xl font-medium text-neutral-900">{title}</h1>
           <button
             onClick={() => setRoute('home')}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-neutral-200/60 text-neutral-600 hover:bg-neutral-300 hover:text-neutral-900 transition-colors cursor-pointer"
+            className="flex items-center justify-center w-8 h-8 rounded-lg bg-neutral-200/60 text-neutral-600 hover:bg-neutral-300 hover:text-neutral-900 transition-colors cursor-pointer"
             aria-label="Close"
           >
-            <XIcon size={20} />
+            <XIcon size={18} />
           </button>
         </div>
         {children}

@@ -8,6 +8,7 @@ import {
   PlayIcon,
   StopIcon,
   CaretDownIcon,
+  ImageIcon,
 } from '@phosphor-icons/react'
 import {
   Select,
@@ -26,6 +27,7 @@ import { voices } from '@/providers/openai/voices'
 import { ImageGenModelsData } from '@/providers/replicate/images'
 import { ArtStyles, AiStoryTopics } from '@/data/contentStyles'
 import { AspectRatio } from '@/type/content'
+import { ButtonGroup, ButtonGroupSeparator } from '@/components/ui/button-group'
 
 const VoiceSelect = ({
   value,
@@ -242,31 +244,45 @@ const SlideItem = ({
   }
 
   return (
-    <div className="p-3 rounded-lg bg-neutral-50 border border-neutral-100 flex flex-col gap-3">
-      {/* Header with slide number and delete */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="w-6 h-6 rounded-md bg-neutral-200 text-neutral-600 text-xs font-medium flex items-center justify-center">
-            {index + 1}
-          </span>
-          <span className="text-sm font-medium text-neutral-600">Slide {index + 1}</span>
-        </div>
+    <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-100 flex flex-col gap-2">
+      {/* Header */}
+      <div className='flex items-center justify-between'>
+        <ButtonGroup>
+          <Button
+            variant="default"
+            className='h-7 disabled:opacity-100 disabled:bg-gray-100'
+            disabled
+          >
+              Slide {index+1}
+            </Button>
+            <ButtonGroupSeparator/>
+          <Button
+            variant='default'
+            size='icon'
+            onClick={() => onDelete(slide.uid)}
+            className="text-xs w-fit px-2 h-7 hover:bg-red-100"
+          >
+            <TrashIcon size={12} weight="fill" />
+          </Button>
+        </ButtonGroup>
+        {/* <div className='text-xs h-7 rounded-[8px] bg-neutral-100 flex items-center justify-center px-2'>Slide 1</div> */}
         <Button
-          variant="secondary"
-          size="icon"
-          onClick={() => onDelete(slide.uid)}
-          className="h-7 w-7 hover:text-red-600 hover:bg-red-50"
-        >
-          <TrashIcon size={14} />
-        </Button>
+            variant="default"
+            size="sm"
+            onClick={handleGenerate}
+            // disabled={generating || !slide.imageDesc}
+            className="text-xs w-[101px] px-2 h-7"
+          >
+            <SparkleIcon size={12} weight="fill" />
+            {generating ? 'Generating...' : 'Generate'}
+          </Button>
       </div>
-
       {/* Content */}
       <div className="flex gap-3">
         {/* Text inputs */}
         <div className="flex-1 flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">Narration</Label>
+            <Label className="text-xs text-muted-foreground">Content</Label>
             <Textarea
               value={slide.text}
               onChange={(e) => onTextChange(slide.uid, e.target.value)}
@@ -286,8 +302,10 @@ const SlideItem = ({
         </div>
 
         {/* Image preview */}
-        <div className="flex flex-col gap-2 shrink-0">
-          <div className="w-[90px] h-[160px] bg-white rounded-lg overflow-hidden border border-neutral-200">
+        <div className="flex flex-col gap-1 shrink-0">
+          <Label className="text-xs text-center text-muted-foreground">Image</Label>
+          
+          <div className="w-[101px] h-[180px] bg-white rounded-lg overflow-hidden  border-neutral-200">
             {slide.imageUrl ? (
               <img
                 src={slide.imageUrl}
@@ -296,20 +314,11 @@ const SlideItem = ({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <SparkleIcon size={24} className="text-neutral-200" />
+                <ImageIcon size={24} className="text-neutral-300" />
               </div>
             )}
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleGenerate}
-            disabled={generating || !slide.imageDesc}
-            className="w-full text-xs"
-          >
-            <SparkleIcon size={12} weight="fill" />
-            {generating ? 'Generating...' : 'Generate'}
-          </Button>
+          
         </div>
       </div>
     </div>
@@ -509,26 +518,27 @@ export const AIVideoPage = () => {
             </div>
         </Section>
 
-        {/* Title Section */}
-        <Section title="Video Title">
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter a compelling title for your video..."
-          />
-        </Section>
-
-        {/* Slides Section */}
+        {/* Video Content Section */}
         <Section
-          title="Slides"
+          title="Video Content"
           rightElement={
-            <Button variant="default" size="sm" onClick={() => setWizardOpen(true)}>
+            <Button variant="default" size="sm" className='h-7' onClick={() => setWizardOpen(true)}>
               <SparkleIcon size={14} weight="fill" />
-              Generate with AI
+              Generate
             </Button>
           }
         >
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
+            <Label>Title</Label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter a compelling title for your video..."
+            />
+          </div>
+
+          <div className="flex flex-col gap-3 mt-2">
+            <Label>Slides</Label>
             {slides.map((slide, index) => (
               <SlideItem
                 key={slide.uid}
@@ -546,6 +556,7 @@ export const AIVideoPage = () => {
             variant="default"
             onClick={onAddSlide}
             className="w-full"
+            size='sm'
           >
             <PlusIcon size={16} weight="bold" />
             Add Slide
