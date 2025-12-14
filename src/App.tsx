@@ -7,6 +7,7 @@ import { RedditStoryPage } from "./pages/RedditStoryPage";
 import { LibraryPage } from "./pages/LibraryPage";
 import { useRouter } from "./state/router";
 import { AIVideoPage } from "./pages/AIVideoPage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 function App() {
   const route = useRouter((state) => state.route);
@@ -22,6 +23,7 @@ function App() {
         {route === 'ai-video' && <AIVideoPage />}
         {route === 'reddit-story' && <RedditStoryPage />}
         {route === 'library' && <LibraryPage />}
+        {route === 'settings' && <SettingsPage />}
       </main>
     </div>
   );

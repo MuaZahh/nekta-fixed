@@ -1,13 +1,12 @@
 import { Player } from '@remotion/player'
 import { useState } from 'react'
 import {
-  XIcon,
   SparkleIcon,
   PlusIcon,
   DownloadSimpleIcon,
   VideoCameraIcon,
+  XIcon,
 } from '@phosphor-icons/react'
-import { useRouter } from '../state/router'
 import { HelloWorld, myCompSchema } from '../remotion/templates/demo/HelloWorld'
 import { z } from 'zod'
 import {
@@ -27,6 +26,7 @@ import { ArtStyles, AiStoryTopics } from '@/data/contentStyles'
 import { AspectRatio } from '@/type/content'
 import { VoiceSelect } from '@/components/shared/VoiceSelect'
 import { ArtStyleSelect } from '@/components/shared/ArtStyleSelect'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { AiVideoSlideType, WizardStep } from './ai-video/types'
 import { SlideItem } from './ai-video/AIVideoSlide'
 import { Section } from '@/components/shared/Section'
@@ -102,7 +102,6 @@ const defaultPlayerProps: z.infer<typeof myCompSchema> = {
 
 
 export const AIVideoPage = () => {
-  const setRoute = useRouter((state) => state.setRoute)
   const [slides, setSlides] = useState<AiVideoSlideType[]>([])
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardStep, setWizardStep] = useState<WizardStep>('create-titles')
@@ -196,17 +195,7 @@ export const AIVideoPage = () => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      {/* Fixed Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-neutral-100 bg-[#F3F3EE]">
-        <h1 className="text-xl font-medium text-neutral-900">AI Video</h1>
-        <button
-          onClick={() => setRoute('home')}
-          className="flex items-center justify-center w-8 h-8 rounded-lg bg-neutral-200/60 text-neutral-600 hover:bg-neutral-300 hover:text-neutral-900 transition-colors cursor-pointer"
-          aria-label="Close"
-        >
-          <XIcon size={18} />
-        </button>
-      </div>
+      <PageHeader title="AI Video" />
 
       {/* Two Column Layout */}
       <div className="flex flex-1 overflow-hidden">
