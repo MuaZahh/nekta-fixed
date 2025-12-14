@@ -30,6 +30,8 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { AiVideoSlideType, WizardStep } from './ai-video/types'
 import { SlideItem } from './ai-video/AIVideoSlide'
 import { Section } from '@/components/shared/Section'
+import { OpenAIStructuredGenProvider } from '@/lib/providers/openAI'
+import { getGenerateImageDescriptionPrompt, getGenerateStoryPrompt, getGenerateTitlesPrompt, StoryScript, StoryWithImages, TitleList } from './ai-video/service'
 
 
 const supportedRatios: AspectRatio[] = ['9:16']
@@ -42,38 +44,31 @@ const mockTitles = [
   "Nature's Hidden Wonders",
 ]
 
-const mockGenerateTitles = async (topic: string): Promise<string[]> => {
-  await new Promise((r) => setTimeout(r, 1500))
-  console.log('Generating titles for topic:', topic)
-  return mockTitles
-}
-
-const mockGenerateStory = async (
+const generateStory = async (
   title: string,
   topic: string
 ): Promise<AiVideoSlideType[]> => {
-  await new Promise((r) => setTimeout(r, 2000))
-  console.log('Generating story for:', title, topic)
-  return [
-    {
+  const p = new OpenAIStructuredGenProvider()
+  const storyRes = await p.generate(
+    getGenerateStoryPrompt(title, topic),
+    StoryScript,
+  )
+
+  const storyWithImagesRes = await p.generate(
+    getGenerateImageDescriptionPrompt(storyRes.text),
+    StoryWithImages,
+  )
+
+  const storySlides: AiVideoSlideType[] = []
+  for (const item of storyWithImagesRes.result) {
+    storySlides.push({
       uid: crypto.randomUUID(),
-      text: 'In 2012, scientists discovered an underwater river at the bottom of the Black Sea.',
-      imageDesc:
-        'Dark underwater scene with a mysterious river flowing along the sea bed, bioluminescent particles',
-    },
-    {
-      uid: crypto.randomUUID(),
-      text: 'This river, complete with trees and leaves, snakes through the sea bed like a hidden world.',
-      imageDesc:
-        'Submerged trees and vegetation along an underwater riverbed, ethereal blue lighting',
-    },
-    {
-      uid: crypto.randomUUID(),
-      text: 'It is so large that if it were on land, it would be the sixth-largest river in the world.',
-      imageDesc:
-        'Vast underwater landscape showing the scale of the submarine river, dramatic perspective',
-    },
-  ]
+      text: item.text,
+      imageDesc: item.imageDescription,
+    })
+  }
+
+  return storySlides
 }
 
 const mockGenerateImage = async (
@@ -164,8 +159,14 @@ export const AIVideoPage = () => {
   const onGenerateTitles = async () => {
     if (!topic) return
     setGenerating(true)
-    const titles = await mockGenerateTitles(topic)
-    setGeneratedTitles(titles)
+    const p = new OpenAIStructuredGenProvider()
+
+    const titles = await p.generate(
+      getGenerateTitlesPrompt(topic),
+      TitleList,
+    )
+
+    setGeneratedTitles(titles.titles)
     setWizardStep('select-title')
     setGenerating(false)
   }
@@ -173,7 +174,7 @@ export const AIVideoPage = () => {
   const onGenerateStory = async () => {
     if (!selectedTitle) return
     setGenerating(true)
-    const storySlides = await mockGenerateStory(selectedTitle, topic)
+    const storySlides = await generateStory(selectedTitle, topic)
     setSlides(storySlides)
     setTitle(selectedTitle)
     closeWizard()

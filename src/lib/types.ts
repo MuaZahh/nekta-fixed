@@ -1,3 +1,5 @@
+import { AspectRatio, ImagGenModelMeta } from "@/type/content"
+import { z } from "zod"
 export type AIProviderType = 'openai' | 'elevenlabs' | 'replicate' | 'gemini'
 
 export const aiProviderToLabel = (provider: AIProviderType) => {
@@ -24,9 +26,23 @@ export type TTSResult = {
   timestamps: TimestampedTranscription
 }
 
+export type ImageGenResult = {
+  base64Data: string
+}
 
-export interface TTSProvider {
+interface BaseProvider {
   provider: AIProviderType
   enabled: boolean
+}
+
+export interface TTSProvider extends BaseProvider {
   generate(voiceId: string, text: string): Promise<TTSResult>
+}
+
+export interface ImageGenProvider extends BaseProvider {
+  generate(model: ImagGenModelMeta, aspectRatio: AspectRatio, prompt: string): Promise<ImageGenResult>
+}
+
+export interface StructuredTextGenProvider extends BaseProvider {
+  generate<T>(prompt: string, schema: z.ZodType<T>): Promise<T>
 }
