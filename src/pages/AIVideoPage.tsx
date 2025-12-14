@@ -6,6 +6,7 @@ import {
   DownloadSimpleIcon,
   VideoCameraIcon,
   XIcon,
+  CircleNotchIcon,
 } from '@phosphor-icons/react'
 import { HelloWorld, myCompSchema } from '../remotion/templates/demo/HelloWorld'
 import { z } from 'zod'
@@ -100,6 +101,13 @@ export const AIVideoPage = () => {
   const [generatedTitles, setGeneratedTitles] = useState<string[]>([])
   const [selectedTitle, setSelectedTitle] = useState<string>('')
   const [isPreviewGenerated, setIsPreviewGenerated] = useState(false)
+  const [previewGenerating, setPreviewGenerating] = useState(false)
+  const [previewProgress, setPreviewProgress] = useState<{
+    imagesTotal: number
+    imagesDone: number
+    audioTotal: number
+    audioDone: number
+  } | null>(null)
 
   const onAddSlide = () => {
     setSlides((prev) => [
@@ -208,6 +216,49 @@ export const AIVideoPage = () => {
     )
 
     return { audioUrl: saveResult.mediaUrl, isNew: true }
+  }
+
+  const onGeneratePreview = async () => {
+    if (!slides.length) return
+
+    setPreviewGenerating(true)
+
+    const slidesNeedingImage = slides.filter((s) => {
+      if (!s.imageDesc) return false
+      const hash = computeHash(`${s.imageDesc}. Style: ${artStyleDesc}`)
+      return s.imageDescHash !== hash || !s.imageUrl
+    })
+
+    const slidesNeedingAudio = slides.filter((s) => {
+      if (!s.text) return false
+      const hash = computeHash(s.text + voice)
+      return s.textHash !== hash || !s.audioData?.audioUrl
+    })
+
+    setPreviewProgress({
+      imagesTotal: slidesNeedingImage.length,
+      imagesDone: 0,
+      audioTotal: slidesNeedingAudio.length,
+      audioDone: 0,
+    })
+
+    for (const slide of slidesNeedingImage) {
+      await onGenerateImage(slide.uid)
+      setPreviewProgress((prev) =>
+        prev ? { ...prev, imagesDone: prev.imagesDone + 1 } : null
+      )
+    }
+
+    for (const slide of slidesNeedingAudio) {
+      await onGenerateAudio(slide.uid)
+      setPreviewProgress((prev) =>
+        prev ? { ...prev, audioDone: prev.audioDone + 1 } : null
+      )
+    }
+
+    setPreviewGenerating(false)
+    setPreviewProgress(null)
+    setIsPreviewGenerated(true)
   }
 
   const onGenerateTitles = async () => {
@@ -390,16 +441,28 @@ export const AIVideoPage = () => {
               <VideoCameraIcon size={48} className="text-neutral-300" />
             </div>
           )}
-          <Button
-            variant="default"
-            className="border"
-            size="sm"
-            onClick={() => setIsPreviewGenerated(true)}
-          >
-            <SparkleIcon />
-            Generate preview
-          </Button>
-          <Button variant="default" className="border" size="sm">
+          <div className="flex flex-col items-center gap-1">
+            <Button
+              variant="default"
+              className="border"
+              size="sm"
+              onClick={onGeneratePreview}
+              disabled={!slides.length || previewGenerating}
+            >
+              {previewGenerating ? (
+                <CircleNotchIcon className="animate-spin" />
+              ) : (
+                <SparkleIcon />
+              )}
+              {previewGenerating ? 'Generating...' : 'Generate preview'}
+            </Button>
+            {previewProgress && (
+              <span className="text-xs text-neutral-500">
+                {previewProgress.imagesDone}/{previewProgress.imagesTotal} images, {previewProgress.audioDone}/{previewProgress.audioTotal} audio
+              </span>
+            )}
+          </div>
+          <Button variant="default" className="border" size="sm" disabled={!isPreviewGenerated}>
             <DownloadSimpleIcon />
             Save video
           </Button>
