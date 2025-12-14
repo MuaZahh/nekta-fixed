@@ -1,14 +1,9 @@
 import { Player } from '@remotion/player'
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import {
   XIcon,
   SparkleIcon,
   PlusIcon,
-  TrashIcon,
-  PlayIcon,
-  StopIcon,
-  CaretDownIcon,
-  ImageIcon,
   DownloadSimpleIcon,
   VideoCameraIcon,
 } from '@phosphor-icons/react'
@@ -26,151 +21,16 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { voices } from '@/providers/openai/voices'
 import { ImageGenModelsData } from '@/providers/replicate/images'
 import { ArtStyles, AiStoryTopics } from '@/data/contentStyles'
 import { AspectRatio } from '@/type/content'
-import { ButtonGroup, ButtonGroupSeparator } from '@/components/ui/button-group'
+import { VoiceSelect } from '@/components/shared/VoiceSelect'
+import { ArtStyleSelect } from '@/components/shared/ArtStyleSelect'
+import { AiVideoSlideType, WizardStep } from './ai-video/types'
+import { SlideItem } from './ai-video/AIVideoSlide'
+import { Section } from '@/components/shared/Section'
 
-const VoiceSelect = ({
-  value,
-  onChange,
-}: {
-  value: string
-  onChange: (value: string) => void
-}) => {
-  const [isPlaying, setIsPlaying] = useState(false)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-
-  const selectedVoice = voices.find((v) => v.id === value)
-
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause()
-        audioRef.current = null
-      }
-    }
-  }, [])
-
-  const handlePreview = () => {
-    if (!selectedVoice) return
-
-    if (isPlaying && audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-      setIsPlaying(false)
-      return
-    }
-
-    const audio = new Audio(`/voices/${selectedVoice.previewFile}`)
-    audioRef.current = audio
-
-    audio.onended = () => {
-      setIsPlaying(false)
-    }
-
-    audio.onerror = () => {
-      setIsPlaying(false)
-    }
-
-    audio.play()
-    setIsPlaying(true)
-  }
-
-  const handleVoiceChange = (newVoice: string) => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-      setIsPlaying(false)
-    }
-    onChange(newVoice)
-  }
-
-  return (
-    <div className="flex gap-2">
-      <Select value={value} onValueChange={handleVoiceChange}>
-        <SelectTrigger className="flex-1">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {voices.map((v) => (
-              <SelectItem key={v.id} value={v.id}>
-                {v.name}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-      <Button
-        variant="default"
-        size="icon"
-        onClick={handlePreview}
-        className="shrink-0"
-        title={isPlaying ? 'Stop preview' : 'Play preview'}
-      >
-        {isPlaying ? <StopIcon size={16} /> : <PlayIcon size={16} />}
-      </Button>
-    </div>
-  )
-}
-
-const ArtStyleSelect = ({
-  styleId,
-  styleDesc,
-  onStyleChange,
-  onDescChange,
-}: {
-  styleId: string
-  styleDesc: string
-  onStyleChange: (value: string) => void
-  onDescChange: (value: string) => void
-}) => {
-  const handleStyleSelect = (newStyleId: string) => {
-    onStyleChange(newStyleId)
-    const style = ArtStyles.find((s) => s.uid === newStyleId)
-    if (style) {
-      onDescChange(style.description)
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      <Select value={styleId} onValueChange={handleStyleSelect}>
-        <SelectTrigger className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {ArtStyles.map((s) => (
-              <SelectItem key={s.uid} value={s.uid}>
-                {s.name}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-      <Textarea
-        value={styleDesc}
-        onChange={(e) => onDescChange(e.target.value)}
-        className="h-[72px] resize-none"
-        placeholder="Describe the art style..."
-      />
-    </div>
-  )
-}
-
-type AiVideoSlide = {
-  uid: string
-  text: string
-  imageDesc: string
-  imageUrl?: string
-}
-
-type WizardStep = 'create-titles' | 'select-title'
 
 const supportedRatios: AspectRatio[] = ['9:16']
 
@@ -191,7 +51,7 @@ const mockGenerateTitles = async (topic: string): Promise<string[]> => {
 const mockGenerateStory = async (
   title: string,
   topic: string
-): Promise<AiVideoSlide[]> => {
+): Promise<AiVideoSlideType[]> => {
   await new Promise((r) => setTimeout(r, 2000))
   console.log('Generating story for:', title, topic)
   return [
@@ -238,156 +98,12 @@ const defaultPlayerProps: z.infer<typeof myCompSchema> = {
   },
 }
 
-const SlideItem = ({
-  slide,
-  index,
-  onDelete,
-  onTextChange,
-  onImageDescChange,
-  onGenerateImage,
-}: {
-  slide: AiVideoSlide
-  index: number
-  onDelete: (uid: string) => void
-  onTextChange: (uid: string, val: string) => void
-  onImageDescChange: (uid: string, val: string) => void
-  onGenerateImage: (uid: string) => Promise<void>
-}) => {
-  const [generating, setGenerating] = useState(false)
 
-  const handleGenerate = async () => {
-    setGenerating(true)
-    await onGenerateImage(slide.uid)
-    setGenerating(false)
-  }
 
-  return (
-    <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-100 flex flex-col gap-2">
-      {/* Header */}
-      <div className='flex items-center justify-between'>
-        <ButtonGroup>
-          <Button
-            variant="default"
-            className='h-7 disabled:opacity-100 disabled:bg-gray-100'
-            disabled
-          >
-              Slide {index+1}
-            </Button>
-            <ButtonGroupSeparator/>
-          <Button
-            variant='default'
-            size='icon'
-            onClick={() => onDelete(slide.uid)}
-            className="text-xs w-fit px-2 h-7 hover:bg-red-100"
-          >
-            <TrashIcon size={12} weight="fill" />
-          </Button>
-        </ButtonGroup>
-        {/* <div className='text-xs h-7 rounded-[8px] bg-neutral-100 flex items-center justify-center px-2'>Slide 1</div> */}
-        <Button
-            variant="default"
-            size="sm"
-            onClick={handleGenerate}
-            // disabled={generating || !slide.imageDesc}
-            className="text-xs w-[101px] px-2 h-7"
-          >
-            <SparkleIcon size={12} weight="fill" />
-            {generating ? 'Generating...' : 'Generate'}
-          </Button>
-      </div>
-      {/* Content */}
-      <div className="flex gap-3">
-        {/* Text inputs */}
-        <div className="flex-1 flex flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">Content</Label>
-            <Textarea
-              value={slide.text}
-              onChange={(e) => onTextChange(slide.uid, e.target.value)}
-              className="h-[72px] resize-none bg-white"
-              placeholder="Enter the narration text for this slide..."
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">Image Description</Label>
-            <Textarea
-              value={slide.imageDesc}
-              onChange={(e) => onImageDescChange(slide.uid, e.target.value)}
-              className="h-[72px] resize-none bg-white"
-              placeholder="Describe the image to generate..."
-            />
-          </div>
-        </div>
-
-        {/* Image preview */}
-        <div className="flex flex-col gap-1 shrink-0">
-          <Label className="text-xs text-center text-muted-foreground">Image</Label>
-          
-          <div className="w-[101px] h-[180px] bg-white rounded-lg overflow-hidden  border-neutral-200">
-            {slide.imageUrl ? (
-              <img
-                src={slide.imageUrl}
-                className="w-full h-full object-cover"
-                alt="Generated"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <ImageIcon size={24} className="text-neutral-300" />
-              </div>
-            )}
-          </div>
-          
-        </div>
-      </div>
-    </div>
-  )
-}
-
-const Section = ({
-  title,
-  children,
-  className = '',
-  rightElement,
-  defaultOpen = true,
-}: {
-  title: string
-  children: React.ReactNode
-  className?: string
-  rightElement?: React.ReactNode
-  defaultOpen?: boolean
-}) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen)
-
-  return (
-    <div
-      className={`w-full max-w-[640px] rounded-xl bg-white border border-neutral-100 ${className}`}
-    >
-      <div
-        className="flex items-center justify-between p-4 cursor-pointer select-none"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <div className="flex items-center gap-2">
-          <CaretDownIcon
-            size={14}
-            weight="bold"
-            className={`text-neutral-400 transition-transform ${isOpen ? '' : '-rotate-90'}`}
-          />
-          <span className="text-sm font-medium text-neutral-700">{title}</span>
-        </div>
-        {rightElement && isOpen && (
-          <div onClick={(e) => e.stopPropagation()}>{rightElement}</div>
-        )}
-      </div>
-      {isOpen && (
-        <div className="px-4 pb-4 flex flex-col gap-4">{children}</div>
-      )}
-    </div>
-  )
-}
 
 export const AIVideoPage = () => {
   const setRoute = useRouter((state) => state.setRoute)
-  const [slides, setSlides] = useState<AiVideoSlide[]>([])
+  const [slides, setSlides] = useState<AiVideoSlideType[]>([])
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardStep, setWizardStep] = useState<WizardStep>('create-titles')
   const [generating, setGenerating] = useState(false)
@@ -711,6 +427,7 @@ export const AIVideoPage = () => {
                   <Button
                     onClick={onGenerateTitles}
                     disabled={generating || !topic}
+                    size='sm'
                   >
                     {generating ? (
                       <>Generating...</>
@@ -751,12 +468,14 @@ export const AIVideoPage = () => {
                 <div className="flex justify-between pt-2">
                   <Button
                     variant="ghost"
+                    size='sm'
                     onClick={() => setWizardStep('create-titles')}
                   >
                     Back
                   </Button>
                   <Button
                     onClick={onGenerateStory}
+                    size='sm'
                     disabled={generating || !selectedTitle}
                   >
                     {generating ? (

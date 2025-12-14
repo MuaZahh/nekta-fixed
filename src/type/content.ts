@@ -1,5 +1,5 @@
+import { AIProviderType } from "@/lib/types"
 
-export type AIProviderType = 'openai' | 'elevenlabs' | 'replicate' | 'gemini'
 
 export type VoiceDescriptor = {
   id: string

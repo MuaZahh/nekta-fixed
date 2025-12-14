@@ -93,6 +93,20 @@ async function createWindow() {
 
   // Auto update
   update(win);
+
+  // Enable context menu (right-click)
+  win.webContents.on("context-menu", (_, params) => {
+    const contextMenu = Menu.buildFromTemplate([
+      { role: "undo", enabled: params.editFlags.canUndo },
+      { role: "redo", enabled: params.editFlags.canRedo },
+      { type: "separator" },
+      { role: "cut", enabled: params.editFlags.canCut },
+      { role: "copy", enabled: params.editFlags.canCopy },
+      { role: "paste", enabled: params.editFlags.canPaste },
+      { role: "selectAll", enabled: params.editFlags.canSelectAll },
+    ]);
+    contextMenu.popup();
+  });
 }
 
 function createMenu() {
@@ -116,11 +130,35 @@ function createMenu() {
           label: "File",
           submenu: [{ role: "close" }],
         },
+        {
+          label: "Edit",
+          submenu: [
+            { role: "undo" },
+            { role: "redo" },
+            { type: "separator" },
+            { role: "cut" },
+            { role: "copy" },
+            { role: "paste" },
+            { role: "selectAll" },
+          ],
+        },
       ]
     : [
         {
           label: "File",
           submenu: [{ role: "quit" }],
+        },
+        {
+          label: "Edit",
+          submenu: [
+            { role: "undo" },
+            { role: "redo" },
+            { type: "separator" },
+            { role: "cut" },
+            { role: "copy" },
+            { role: "paste" },
+            { role: "selectAll" },
+          ],
         },
       ];
 

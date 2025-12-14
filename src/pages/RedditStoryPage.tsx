@@ -6,6 +6,8 @@ import { HelloWorld, myCompSchema } from '../remotion/templates/demo/HelloWorld'
 import { useRouter } from '../state/router'
 import { PageLayout } from '../components/PageLayout'
 import { z } from 'zod'
+import { Button } from '@/components/ui/button'
+import { OpenAITTSProvider } from '@/lib/providers/openAI'
 
 interface RenderProgress {
   renderedFrames: number
@@ -79,6 +81,12 @@ export const RedditStoryPage = () => {
     }
 
     setIsRendering(false)
+  }
+
+  const onGenerate = async() => {
+    const p = new OpenAITTSProvider()
+    const res = await p.generate('shimmer', 'Hey there! how was your day?')
+    console.log(res)
   }
 
   const progressPercent = renderProgress ? Math.round(renderProgress.progress * 100) : 0
@@ -156,6 +164,8 @@ export const RedditStoryPage = () => {
               </button>
             )}
           </div>
+
+          <Button onClick={onGenerate}>Generate text</Button>
         </div>
     </PageLayout>
   )

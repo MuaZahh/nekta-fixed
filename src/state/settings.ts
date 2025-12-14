@@ -1,21 +1,9 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { persist } from 'zustand/middleware'
+import { AIProviderType } from '@/lib/types'
 
-export type AIProviderType = 'openai' | 'elevenlabs' | 'replicate' | 'gemini'
 
-export const aiProviderToLabel = (provider: AIProviderType) => {
-  switch (provider) {
-    case 'replicate':
-      return 'Replicate'
-    case 'elevenlabs':
-      return 'ElevenLabs'
-    case 'gemini':
-      return 'Gemini'
-    case 'openai':
-      return 'OpenAI'
-  }
-}
 
 type State = {
   apiKeys: Partial<Record<AIProviderType, string | undefined>>
