@@ -1,15 +1,23 @@
-import { AbsoluteFill, Sequence, staticFile, useVideoConfig } from "remotion";
+import { AbsoluteFill, Sequence, CalculateMetadataFunction } from "remotion";
 import { z } from "zod";
 import { Audio } from "@remotion/media";
 import { loadFont } from "@remotion/google-fonts/BreeSerif";
 import { Background } from "./Background";
-import { calculateFrameTiming, getAudioPath } from "./utils";
+import { calculateFrameTiming } from "./utils";
 import { TimelineSchema } from "./types";
 import Subtitle from "@/remotion/components/Subtitle";
 import { INTRO_DURATION, FPS } from "@/remotion/constants";
 
+const metadataSchema = z.object({
+  durationInFrames: z.number(),
+  compositionWidth: z.number(),
+  compositionHeight: z.number(),
+  fps: z.number(),
+});
+
 export const aiVideoSchema = z.object({
   timeline: TimelineSchema.nullable(),
+  metadata: metadataSchema.optional(),
 });
 
 const { fontFamily } = loadFont();
@@ -20,8 +28,6 @@ export const AIVideo: React.FC<z.infer<typeof aiVideoSchema>> = ({
   if (!timeline) {
     throw new Error("Expected timeline to be fetched");
   }
-
-  const { id } = useVideoConfig();
 
   return (
     <AbsoluteFill style={{ backgroundColor: "white" }}>
@@ -68,7 +74,7 @@ export const AIVideo: React.FC<z.infer<typeof aiVideoSchema>> = ({
             durationInFrames={duration}
             premountFor={3 * FPS}
           >
-            <Background project={id} item={element} />
+            <Background item={element} />
           </Sequence>
         );
       })}
@@ -105,10 +111,27 @@ export const AIVideo: React.FC<z.infer<typeof aiVideoSchema>> = ({
             durationInFrames={duration}
             premountFor={3 * FPS}
           >
-            <Audio src={staticFile(getAudioPath(id, element.audioUrl))} />
+            <Audio src={element.audioUrl} />
           </Sequence>
         );
       })}
     </AbsoluteFill>
   );
+};
+
+export const calculateAIVideoMetadata: CalculateMetadataFunction<
+  z.infer<typeof aiVideoSchema>
+> = async ({ props }) => {
+  if (!props.metadata) {
+    return {};
+  }
+
+  const { durationInFrames, fps, compositionHeight, compositionWidth } = props.metadata;
+
+  return {
+    fps,
+    durationInFrames,
+    height: compositionHeight,
+    width: compositionWidth,
+  };
 };

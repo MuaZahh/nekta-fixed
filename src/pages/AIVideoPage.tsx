@@ -1,5 +1,6 @@
 import { Player } from '@remotion/player'
-import { useState } from 'react'
+import { StitchingState } from '@remotion/renderer'
+import { useState, useEffect } from 'react'
 import {
   SparkleIcon,
   PlusIcon,
@@ -7,9 +8,9 @@ import {
   VideoCameraIcon,
   XIcon,
   CircleNotchIcon,
+  FolderOpenIcon,
 } from '@phosphor-icons/react'
-import { HelloWorld, myCompSchema } from '../remotion/templates/demo/HelloWorld'
-import { z } from 'zod'
+import { useRouter } from '@/state/router'
 import {
   Select,
   SelectContent,
@@ -32,11 +33,30 @@ import { AiVideoSlideType, WizardStep } from './ai-video/types'
 import { SlideItem } from './ai-video/AIVideoSlide'
 import { Section } from '@/components/shared/Section'
 import { OpenAIStructuredGenProvider, OpenAITTSProvider } from '@/lib/providers/openAI'
-import { getGenerateImageDescriptionPrompt, getGenerateStoryPrompt, getGenerateTitlesPrompt, StoryScript, StoryWithImages, TitleList } from './ai-video/service'
+import { getGenerateImageDescriptionPrompt, getGenerateStoryPrompt, getGenerateTitlesPrompt, StoryScript, StoryWithImages, TitleList, createTimelineFromSlides } from './ai-video/service'
+import { AIVideo, aiVideoSchema } from '@/remotion/templates/ai-video-basic/AIVideo'
+import { Timeline } from '@/remotion/templates/ai-video-basic/types'
+import { FPS, INTRO_DURATION } from '@/remotion/constants'
 import { ReplicateImageGenProvider } from '@/lib/providers/replicate'
 
 
 const supportedRatios: AspectRatio[] = ['9:16']
+
+interface RenderProgress {
+  renderedFrames: number
+  encodedFrames: number
+  encodedDoneIn: number | null
+  renderedDoneIn: number | null
+  renderEstimatedTime: number
+  progress: number
+  stitchStage: StitchingState
+}
+
+interface RenderError {
+  name: string
+  message: string
+  stack?: string
+}
 
 const generateStory = async (
   title: string,
@@ -65,26 +85,15 @@ const generateStory = async (
   return storySlides
 }
 
-const defaultPlayerProps: z.infer<typeof myCompSchema> = {
-  titleText: 'AI Video Preview',
-  titleColor: '#000000',
-  logoColor1: '#91EAE4',
-  logoColor2: '#86A8E7',
-  metadata: {
-    durationInFrames: 150,
-    compositionWidth: 1080,
-    compositionHeight: 1920,
-    fps: 30,
-  },
-}
-
-
-
 export const AIVideoPage = () => {
+  const setRoute = useRouter((state) => state.setRoute)
   const [slides, setSlides] = useState<AiVideoSlideType[]>([])
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardStep, setWizardStep] = useState<WizardStep>('create-titles')
   const [generating, setGenerating] = useState(false)
+  const [isRendering, setIsRendering] = useState(false)
+  const [renderProgress, setRenderProgress] = useState<RenderProgress | null>(null)
+  const [renderError, setRenderError] = useState<RenderError | null>(null)
 
   const [voice, setVoice] = useState<string>('alloy')
   const [aspectRatio, setAspectRatio] = useState<string>('9:16')
@@ -101,6 +110,7 @@ export const AIVideoPage = () => {
   const [generatedTitles, setGeneratedTitles] = useState<string[]>([])
   const [selectedTitle, setSelectedTitle] = useState<string>('')
   const [isPreviewGenerated, setIsPreviewGenerated] = useState(false)
+  const [timeline, setTimeline] = useState<Timeline | null>(null)
   const [previewGenerating, setPreviewGenerating] = useState(false)
   const [previewProgress, setPreviewProgress] = useState<{
     imagesTotal: number
@@ -108,6 +118,61 @@ export const AIVideoPage = () => {
     audioTotal: number
     audioDone: number
   } | null>(null)
+
+  useEffect(() => {
+    window.ipcRenderer.on('RENDER_PROGRESS', (_event, progress: RenderProgress) => {
+      setRenderProgress(progress)
+    })
+    window.ipcRenderer.on('RENDER_ERROR', (_event, error: RenderError) => {
+      console.error('Render error:', error)
+      setRenderError(error)
+      setIsRendering(false)
+    })
+    return () => {
+      window.ipcRenderer.removeAllListeners('RENDER_PROGRESS')
+      window.ipcRenderer.removeAllListeners('RENDER_ERROR')
+    }
+  }, [])
+
+  const durationInFrames = timeline && timeline.audio.length > 0
+    ? Math.max(1, Math.ceil(((timeline.audio[timeline.audio.length - 1]?.endMs || 0) / 1000) * FPS) + INTRO_DURATION)
+    : 1
+
+  const renderVideo = async () => {
+    if (!timeline) return
+
+    setRenderError(null)
+    setRenderProgress({
+      renderedFrames: 0,
+      encodedFrames: 0,
+      encodedDoneIn: null,
+      renderedDoneIn: null,
+      renderEstimatedTime: 0,
+      progress: 0,
+      stitchStage: 'encoding',
+    })
+    setIsRendering(true)
+
+    const inputProps = {
+      timeline,
+      metadata: {
+        durationInFrames,
+        compositionWidth: 1080,
+        compositionHeight: 1920,
+        fps: FPS,
+      },
+    }
+
+    const response = await window.ipcRenderer.invoke('RENDER_MEDIA', inputProps, 'AIVideo')
+
+    if (response.success) {
+      console.log('Video rendered successfully!')
+    } else {
+      console.error('Failed to render video.')
+    }
+
+    setIsRendering(false)
+  }
 
   const onAddSlide = () => {
     setSlides((prev) => [
@@ -255,6 +320,14 @@ export const AIVideoPage = () => {
         prev ? { ...prev, audioDone: prev.audioDone + 1 } : null
       )
     }
+
+    // Generate timeline from updated slides
+    // We need to get the latest slides state
+    setSlides((currentSlides) => {
+      const generatedTimeline = createTimelineFromSlides(currentSlides, title)
+      setTimeline(generatedTimeline)
+      return currentSlides
+    })
 
     setPreviewGenerating(false)
     setPreviewProgress(null)
@@ -416,10 +489,11 @@ export const AIVideoPage = () => {
         {/* Right Column - Video Preview */}
         <div className="w-[30%] flex-shrink-0 border-l border-neutral-100 p-3 flex flex-col items-center justify-center overflow-hidden gap-2">
           <Label>Preview</Label>
-          {isPreviewGenerated ? (
+          {isPreviewGenerated && timeline && timeline.audio.length > 0 ? (
             <Player
-              component={HelloWorld}
-              inputProps={defaultPlayerProps}
+              component={AIVideo}
+              schema={aiVideoSchema}
+              inputProps={{ timeline }}
               style={{
                 width: '100%',
                 maxHeight: '100%',
@@ -428,7 +502,10 @@ export const AIVideoPage = () => {
                 overflow: 'hidden',
               }}
               controls
-              {...defaultPlayerProps.metadata}
+              compositionWidth={1080}
+              compositionHeight={1920}
+              fps={FPS}
+              durationInFrames={durationInFrames}
             />
           ) : (
             <div
@@ -462,10 +539,64 @@ export const AIVideoPage = () => {
               </span>
             )}
           </div>
-          <Button variant="default" className="border" size="sm" disabled={!isPreviewGenerated}>
-            <DownloadSimpleIcon />
-            Save video
-          </Button>
+          {/* Render Button & Progress */}
+          {renderError && (
+            <div className="w-full bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
+              <p className="font-medium">Error: {renderError.name}</p>
+              <p className="mt-1">{renderError.message}</p>
+            </div>
+          )}
+
+          {isRendering && renderProgress ? (
+            <div className="w-full bg-white rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-neutral-700">
+                  {renderProgress.stitchStage === 'encoding' ? 'Encoding' : 'Muxing Audio'}
+                </span>
+                <span className="text-xs font-medium text-neutral-900">
+                  {Math.round(renderProgress.progress * 100)}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-black rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${Math.round(renderProgress.progress * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between mt-2 text-xs text-neutral-500">
+                <span>Frames: {renderProgress.renderedFrames} / {durationInFrames}</span>
+                <span>
+                  {renderProgress.renderEstimatedTime > 0
+                    ? `~${Math.round(renderProgress.renderEstimatedTime / 1000)}s`
+                    : '...'}
+                </span>
+              </div>
+            </div>
+          ) : renderProgress && !isRendering && renderProgress.progress === 1 ? (
+            <div className="w-full flex flex-col gap-2">
+              <p className="text-neutral-900 font-medium text-center text-sm">Render Complete!</p>
+              <Button
+                variant="default"
+                className="border w-full"
+                size="sm"
+                onClick={() => setRoute('library')}
+              >
+                <FolderOpenIcon />
+                Open Library
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="default"
+              className="border"
+              size="sm"
+              onClick={renderVideo}
+              disabled={!isPreviewGenerated || !timeline || isRendering}
+            >
+              <DownloadSimpleIcon />
+              Save video
+            </Button>
+          )}
         </div>
       </div>
 

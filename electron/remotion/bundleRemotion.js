@@ -18,6 +18,15 @@ async function bundleRemotion() {
           config.output.chunkFormat = "commonjs";
         }
 
+        // Add @ alias to resolve src/* paths
+        config.resolve = {
+          ...config.resolve,
+          alias: {
+            ...config.resolve?.alias,
+            "@": path.resolve("src"),
+          },
+        };
+
         // return enableTailwind(config);
         return config;
       },

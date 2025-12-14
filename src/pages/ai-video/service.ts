@@ -1,4 +1,11 @@
 import { z } from 'zod'
+import { AiVideoSlideType } from './types'
+import {
+  Timeline,
+  BackgroundElement,
+  TextElement,
+  ElementAnimation,
+} from '@/remotion/templates/ai-video-basic/types'
 
 export const TitleList = z.object({
   titles: z.array(z.string()),
@@ -57,4 +64,115 @@ export const getGenerateImageDescriptionPrompt = (storyText: string) => {
   </story>`
 
   return prompt
+}
+
+const MAX_WORDS_PER_SEGMENT = 4
+
+const getBgAnimations = (durationMs: number, zoomIn: boolean): ElementAnimation[] => {
+  const animations: ElementAnimation[] = []
+  const startMs = 0
+  const endMs = durationMs
+
+  const scaleFrom = zoomIn ? 1.5 : 1
+  const scaleTo = zoomIn ? 1 : 1.5
+
+  animations.push({
+    type: 'scale',
+    from: scaleFrom,
+    to: scaleTo,
+    startMs,
+    endMs,
+  })
+
+  return animations
+}
+
+const getTextAnimations = (): ElementAnimation[] => {
+  const animations: ElementAnimation[] = []
+  const durationMs = 300
+  const startMs = 0
+  const endMs = durationMs
+
+  animations.push({
+    type: 'scale',
+    from: 0.8,
+    to: 1,
+    startMs,
+    endMs,
+  })
+
+  return animations
+}
+
+export const createTimelineFromSlides = (
+  slides: AiVideoSlideType[],
+  title: string
+): Timeline => {
+  const timeline: Timeline = {
+    elements: [],
+    text: [],
+    audio: [],
+    shortTitle: title,
+  }
+
+  let durationMs = 0
+  let zoomIn = true
+
+  for (const slide of slides) {
+    if (!slide.audioData?.timestamps || !slide.imageUrl || !slide.audioData.audioUrl) {
+      continue
+    }
+
+    const { words, wordStartTimestampSeconds, wordEndTimestampSeconds } = slide.audioData.timestamps
+
+    if (words.length === 0) continue
+
+    const lenMs = Math.ceil(wordEndTimestampSeconds[wordEndTimestampSeconds.length - 1] * 1000)
+
+    const bgElem: BackgroundElement = {
+      startMs: durationMs,
+      endMs: durationMs + lenMs,
+      imageUrl: slide.imageUrl,
+      enterTransition: 'blur',
+      exitTransition: 'blur',
+      animations: getBgAnimations(lenMs, zoomIn),
+    }
+    timeline.elements.push(bgElem)
+
+    timeline.audio.push({
+      startMs: durationMs,
+      endMs: durationMs + lenMs,
+      audioUrl: slide.audioData.audioUrl,
+    })
+
+    let currentWords: string[] = []
+    let segmentStartMs = wordStartTimestampSeconds[0] * 1000 + durationMs
+    let segmentEndMs = durationMs
+
+    for (let i = 0; i < words.length; i++) {
+      currentWords.push(words[i])
+      segmentEndMs = wordEndTimestampSeconds[i] * 1000 + durationMs
+
+      if (currentWords.length >= MAX_WORDS_PER_SEGMENT || i === words.length - 1) {
+        const textElem: TextElement = {
+          startMs: segmentStartMs,
+          endMs: segmentEndMs,
+          text: currentWords.join(' '),
+          position: 'center',
+          animations: getTextAnimations(),
+        }
+        timeline.text.push(textElem)
+
+        currentWords = []
+        if (i < words.length - 1) {
+          segmentStartMs = wordStartTimestampSeconds[i + 1] * 1000 + durationMs
+        }
+      }
+    }
+
+    durationMs += lenMs
+    zoomIn = !zoomIn
+  }
+
+  return timeline
 }

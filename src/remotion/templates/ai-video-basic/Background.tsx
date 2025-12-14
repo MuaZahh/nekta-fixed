@@ -1,20 +1,18 @@
 import {
   AbsoluteFill,
   Img,
-  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
 import { BackgroundElement } from "./types";
 import { FPS, IMAGE_HEIGHT, IMAGE_WIDTH } from "@/remotion/constants";
-import { calculateBlur, getImagePath } from "./utils";
+import { calculateBlur } from "./utils";
 
 const EXTRA_SCALE = 0.2;
 
 export const Background: React.FC<{
   item: BackgroundElement;
-  project: string;
-}> = ({ item, project }) => {
+}> = ({ item }) => {
   const frame = useCurrentFrame();
   const localMs = (frame / FPS) * 1000;
   const { width, height } = useVideoConfig();
@@ -52,7 +50,7 @@ export const Background: React.FC<{
   return (
     <AbsoluteFill>
       <Img
-        src={staticFile(getImagePath(project, item.imageUrl))}
+        src={item.imageUrl}
         style={{
           width: imgWidth * imgScale,
           height: imgHeight * imgScale,

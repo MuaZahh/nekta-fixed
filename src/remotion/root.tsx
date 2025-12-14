@@ -3,6 +3,8 @@ import "../App.css";
 import { Composition } from "remotion";
 import calculateRemotionMetadata from "./calculate-remotion-metadata";
 import { HelloWorld, myCompSchema } from "./templates/demo/HelloWorld";
+import { AIVideo, aiVideoSchema, calculateAIVideoMetadata } from "./templates/ai-video-basic/AIVideo";
+import { FPS } from "./constants";
 
 function RemotionRoot() {
   return (
@@ -33,6 +35,19 @@ function RemotionRoot() {
           },
         }}
         calculateMetadata={calculateRemotionMetadata}
+      />
+      <Composition
+        id="AIVideo"
+        component={AIVideo}
+        schema={aiVideoSchema}
+        durationInFrames={300}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          timeline: null,
+        }}
+        calculateMetadata={calculateAIVideoMetadata}
       />
     </>
   );
