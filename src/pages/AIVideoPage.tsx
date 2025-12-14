@@ -30,20 +30,12 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { AiVideoSlideType, WizardStep } from './ai-video/types'
 import { SlideItem } from './ai-video/AIVideoSlide'
 import { Section } from '@/components/shared/Section'
-import { OpenAIStructuredGenProvider } from '@/lib/providers/openAI'
+import { OpenAIStructuredGenProvider, OpenAITTSProvider } from '@/lib/providers/openAI'
 import { getGenerateImageDescriptionPrompt, getGenerateStoryPrompt, getGenerateTitlesPrompt, StoryScript, StoryWithImages, TitleList } from './ai-video/service'
 import { ReplicateImageGenProvider } from '@/lib/providers/replicate'
 
 
 const supportedRatios: AspectRatio[] = ['9:16']
-
-const mockTitles = [
-  'The Hidden River Beneath the Sea',
-  'Secrets of the Deep Ocean',
-  'Mysteries of Underwater Worlds',
-  'The Black Sea Discovery',
-  "Nature's Hidden Wonders",
-]
 
 const generateStory = async (
   title: string,
@@ -72,15 +64,6 @@ const generateStory = async (
   return storySlides
 }
 
-const mockGenerateImage = async (
-  imageDesc: string,
-  style: string
-): Promise<string> => {
-  await new Promise((r) => setTimeout(r, 1000))
-  console.log('Generating image:', imageDesc, 'Style:', style)
-  return `https://picsum.photos/seed/${Math.random()}/400/711`
-}
-
 const defaultPlayerProps: z.infer<typeof myCompSchema> = {
   titleText: 'AI Video Preview',
   titleColor: '#000000',
@@ -93,7 +76,6 @@ const defaultPlayerProps: z.infer<typeof myCompSchema> = {
     fps: 30,
   },
 }
-
 
 
 
@@ -146,6 +128,16 @@ export const AIVideoPage = () => {
     )
   }
 
+  const computeHash = (text: string): string => {
+    let hash = 0
+    for (let i = 0; i < text.length; i++) {
+      const char = text.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash
+    }
+    return hash.toString(36)
+  }
+
   const onGenerateImage = async (uid: string) => {
     const slide = slides.find((s) => s.uid === uid)
     if (!slide) return
@@ -156,6 +148,12 @@ export const AIVideoPage = () => {
     }
 
     const prompt = `${slide.imageDesc}. Style: ${artStyleDesc}`
+    const promptHash = computeHash(prompt)
+
+    if (slide.imageDescHash === promptHash && slide.imageUrl) {
+      return
+    }
+
     const p = new ReplicateImageGenProvider()
     const img = await p.generate(selectedModel, '9:16', prompt)
 
@@ -170,8 +168,46 @@ export const AIVideoPage = () => {
     }
 
     setSlides((prev) =>
-      prev.map((s) => (s.uid === uid ? { ...s, imageUrl: saveResult.mediaUrl } : s))
+      prev.map((s) => (s.uid === uid ? { ...s, imageUrl: saveResult.mediaUrl, imageDescHash: promptHash } : s))
     )
+  }
+
+  const onGenerateAudio = async (uid: string): Promise<{ audioUrl: string; isNew: boolean } | null> => {
+    const slide = slides.find((s) => s.uid === uid)
+    if (!slide || !slide.text) return null
+
+    const textHash = computeHash(slide.text + voice)
+
+    if (slide.textHash === textHash && slide.audioData?.audioUrl) {
+      return { audioUrl: slide.audioData.audioUrl, isNew: false }
+    }
+
+    const tts = new OpenAITTSProvider()
+    const result = await tts.generate(voice, slide.text)
+
+    const saveResult = await window.ipcRenderer.invoke('SAVE_GENERATED_AUDIO', {
+      base64Data: result.base64Data,
+      filename: `tts_${uid}_${Date.now()}.mp3`,
+    })
+
+    if (!saveResult.ok) {
+      console.error('Failed to save audio:', saveResult.error)
+      return null
+    }
+
+    setSlides((prev) =>
+      prev.map((s) =>
+        s.uid === uid
+          ? {
+              ...s,
+              audioData: { audioUrl: saveResult.mediaUrl, timestamps: result.timestamps },
+              textHash,
+            }
+          : s
+      )
+    )
+
+    return { audioUrl: saveResult.mediaUrl, isNew: true }
   }
 
   const onGenerateTitles = async () => {
@@ -308,6 +344,7 @@ export const AIVideoPage = () => {
                 onTextChange={onTextChange}
                 onImageDescChange={onImageDescChange}
                 onGenerateImage={onGenerateImage}
+                onGenerateAudio={onGenerateAudio}
               />
             ))}
           </div>

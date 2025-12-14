@@ -310,7 +310,7 @@ ipcMain.handle("OPEN_CACHE_FOLDER", async () => {
   try {
     const { app } = await import("electron");
     const appDataPath = app.getPath("userData");
-    const genImagesDir = path.join(appDataPath, "gen", "images");
+    const genImagesDir = path.join(appDataPath, "gen");
 
     if (!fs.existsSync(genImagesDir)) {
       fs.mkdirSync(genImagesDir, { recursive: true });
@@ -327,3 +327,54 @@ ipcMain.handle("OPEN_CACHE_FOLDER", async () => {
     };
   }
 });
+
+ipcMain.handle(
+  "SAVE_GENERATED_AUDIO",
+  async (_event, options: { base64Data: string; filename?: string }) => {
+    try {
+      const { base64Data, filename } = options;
+
+      const { app } = await import("electron");
+      const appDataPath = app.getPath("userData");
+      const genAudioDir = path.join(appDataPath, "gen", "audio");
+
+      if (!fs.existsSync(genAudioDir)) {
+        fs.mkdirSync(genAudioDir, { recursive: true });
+      }
+
+      const finalFilename =
+        filename || `audio_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.mp3`;
+      const filePath = path.join(genAudioDir, finalFilename);
+
+      const buffer = Buffer.from(base64Data, "base64");
+      fs.writeFileSync(filePath, buffer);
+
+      const db = getDb();
+      const uid = crypto.randomUUID();
+      db.insert(schema.cacheFiles)
+        .values({
+          uid,
+          filePath,
+          fileName: finalFilename,
+          mimeType: "audio/mpeg",
+          size: buffer.length,
+          category: "generated_audio",
+        })
+        .run();
+
+      log.info("Saved generated audio to:", filePath);
+
+      return {
+        ok: true,
+        filePath,
+        mediaUrl: `media://${encodeURIComponent(filePath)}`,
+      };
+    } catch (error) {
+      log.error("Failed to save generated audio:", error);
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+);

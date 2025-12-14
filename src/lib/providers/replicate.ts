@@ -95,7 +95,7 @@ export class ReplicateImageGenProvider implements ImageGenProvider {
     let imageUrl = null
 
     if (Array.isArray(imageUrls)) {
-      imageUrls[0]
+      imageUrl = imageUrls[0]
     } else {
       imageUrl = imageUrls
     }

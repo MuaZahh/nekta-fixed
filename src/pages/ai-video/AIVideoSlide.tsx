@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { AiVideoSlideType } from "./types"
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -8,6 +8,9 @@ import {
   SparkleIcon,
   TrashIcon,
   ImageIcon,
+  SpeakerHighIcon,
+  StopIcon,
+  CircleNotchIcon,
 } from '@phosphor-icons/react'
 
 export const SlideItem = ({
@@ -17,6 +20,7 @@ export const SlideItem = ({
   onTextChange,
   onImageDescChange,
   onGenerateImage,
+  onGenerateAudio,
 }: {
   slide: AiVideoSlideType
   index: number
@@ -24,8 +28,12 @@ export const SlideItem = ({
   onTextChange: (uid: string, val: string) => void
   onImageDescChange: (uid: string, val: string) => void
   onGenerateImage: (uid: string) => Promise<void>
+  onGenerateAudio: (uid: string) => Promise<{ audioUrl: string; isNew: boolean } | null>
 }) => {
   const [generating, setGenerating] = useState(false)
+  const [generatingAudio, setGeneratingAudio] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const handleGenerate = async () => {
     setGenerating(true)
@@ -33,10 +41,34 @@ export const SlideItem = ({
     setGenerating(false)
   }
 
+  const handleAudioClick = async () => {
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      setIsPlaying(false)
+      return
+    }
+
+    setGeneratingAudio(true)
+    const result = await onGenerateAudio(slide.uid)
+    setGeneratingAudio(false)
+
+    if (!result) return
+
+    if (audioRef.current) {
+      audioRef.current.pause()
+    }
+    const audio = new Audio(result.audioUrl)
+    audioRef.current = audio
+    audio.onended = () => setIsPlaying(false)
+    audio.play()
+    setIsPlaying(true)
+  }
+
   return (
     <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-100 flex flex-col gap-2">
       {/* Header */}
-      <div className='flex items-center justify-between'>
+      <div className='flex items-center gap-2'>
         <ButtonGroup>
           <Button
             variant="default"
@@ -54,15 +86,37 @@ export const SlideItem = ({
           >
             <TrashIcon size={12} weight="fill" />
           </Button>
+          
         </ButtonGroup>
+        <Button
+            variant='default'
+            size='icon'
+            onClick={handleAudioClick}
+            disabled={generatingAudio || !slide.text}
+            className="text-xs w-fit px-2 h-7"
+          >
+            {generatingAudio ? (
+              <CircleNotchIcon size={12} className="animate-spin" />
+            ) : isPlaying ? (
+              <StopIcon size={12} weight="fill" />
+            ) : (
+              <SpeakerHighIcon size={12} weight="fill" />
+            )}
+          </Button>
+          <div className="grow" />
         <Button
             variant="default"
             size="sm"
             onClick={handleGenerate}
+            disabled={generating}
             className="text-xs w-[101px] px-2 h-7"
           >
-            <SparkleIcon size={12} weight="fill" />
-            {generating ? 'Generating...' : 'Generate'}
+            {generating ? (
+              <CircleNotchIcon size={12} className="animate-spin" />
+            ) : (
+              <SparkleIcon size={12} weight="fill" />
+            )}
+            {generating ? 'Generating' : 'Generate'}
           </Button>
       </div>
       {/* Content */}
