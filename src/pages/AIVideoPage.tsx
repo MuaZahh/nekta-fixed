@@ -32,6 +32,7 @@ import { SlideItem } from './ai-video/AIVideoSlide'
 import { Section } from '@/components/shared/Section'
 import { OpenAIStructuredGenProvider } from '@/lib/providers/openAI'
 import { getGenerateImageDescriptionPrompt, getGenerateStoryPrompt, getGenerateTitlesPrompt, StoryScript, StoryWithImages, TitleList } from './ai-video/service'
+import { ReplicateImageGenProvider } from '@/lib/providers/replicate'
 
 
 const supportedRatios: AspectRatio[] = ['9:16']
@@ -149,10 +150,27 @@ export const AIVideoPage = () => {
     const slide = slides.find((s) => s.uid === uid)
     if (!slide) return
 
-    const url = await mockGenerateImage(slide.imageDesc, artStyleDesc)
+    const selectedModel = ImageGenModelsData.map(g => g.models).flat().find(m => m.id === imageModel)
+    if (!selectedModel) {
+      return
+    }
+
+    const prompt = `${slide.imageDesc}. Style: ${artStyleDesc}`
+    const p = new ReplicateImageGenProvider()
+    const img = await p.generate(selectedModel, '9:16', prompt)
+
+    const saveResult = await window.ipcRenderer.invoke('SAVE_GENERATED_IMAGE', {
+      base64Data: img.base64Data,
+      filename: `slide_${uid}_${Date.now()}.png`,
+    })
+
+    if (!saveResult.ok) {
+      console.error('Failed to save image:', saveResult.error)
+      return
+    }
 
     setSlides((prev) =>
-      prev.map((s) => (s.uid === uid ? { ...s, imageUrl: url } : s))
+      prev.map((s) => (s.uid === uid ? { ...s, imageUrl: saveResult.mediaUrl } : s))
     )
   }
 

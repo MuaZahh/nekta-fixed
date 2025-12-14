@@ -1,4 +1,4 @@
-import { ipcMain, shell, dialog } from "electron";
+import { ipcMain, shell, dialog, net } from "electron";
 import log from "electron-log/main";
 import fs from "fs";
 import path from "path";
@@ -8,6 +8,59 @@ import render from "../remotion/render";
 import { initDb, getDb, schema } from "../libs/db";
 
 initDb();
+
+// Proxy fetch requests to bypass CORS
+ipcMain.handle(
+  "FETCH_PROXY",
+  async (
+    _event,
+    options: {
+      url: string;
+      method: string;
+      headers: Record<string, string>;
+      body?: string;
+    }
+  ) => {
+    try {
+      const response = await net.fetch(options.url, {
+        method: options.method,
+        headers: options.headers,
+        body: options.body,
+      });
+
+      const data = await response.json();
+      return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        data,
+      };
+    } catch (error) {
+      log.error("Fetch proxy error:", error);
+      return {
+        ok: false,
+        status: 500,
+        statusText: error instanceof Error ? error.message : "Unknown error",
+        data: null,
+      };
+    }
+  }
+);
+
+ipcMain.handle("FETCH_IMAGE_BASE64", async (_event, url: string) => {
+  try {
+    const response = await net.fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    return { ok: true, data: base64 };
+  } catch (error) {
+    log.error("Fetch image error:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
 
 ipcMain.handle(
   "RENDER_MEDIA",
@@ -133,5 +186,144 @@ ipcMain.handle("GET_MEDIA_PATH", async (_event, uid: string) => {
   } catch (error) {
     log.error("Failed to get media path:", error);
     return null;
+  }
+});
+
+ipcMain.handle(
+  "SAVE_GENERATED_IMAGE",
+  async (_event, options: { base64Data: string; filename?: string }) => {
+    try {
+      const { base64Data, filename } = options;
+
+      const { app } = await import("electron");
+      const appDataPath = app.getPath("userData");
+      const genImagesDir = path.join(appDataPath, "gen", "images");
+
+      if (!fs.existsSync(genImagesDir)) {
+        fs.mkdirSync(genImagesDir, { recursive: true });
+      }
+
+      const finalFilename =
+        filename || `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.png`;
+      const filePath = path.join(genImagesDir, finalFilename);
+
+      const buffer = Buffer.from(base64Data, "base64");
+      fs.writeFileSync(filePath, buffer);
+
+      const db = getDb();
+      const uid = crypto.randomUUID();
+      db.insert(schema.cacheFiles)
+        .values({
+          uid,
+          filePath,
+          fileName: finalFilename,
+          mimeType: "image/png",
+          size: buffer.length,
+          category: "generated_image",
+        })
+        .run();
+
+      log.info("Saved generated image to:", filePath);
+
+      return {
+        ok: true,
+        filePath,
+        mediaUrl: `media://${encodeURIComponent(filePath)}`,
+      };
+    } catch (error) {
+      log.error("Failed to save generated image:", error);
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+);
+
+ipcMain.handle("GET_CACHE_STATS", async () => {
+  try {
+    const db = getDb();
+    const files = db
+      .select()
+      .from(schema.cacheFiles)
+      .all();
+
+    const activeFiles = files.filter((f) => !f.deletedAt);
+    const totalSize = activeFiles.reduce((sum, f) => sum + f.size, 0);
+
+    return {
+      ok: true,
+      fileCount: activeFiles.length,
+      totalSize,
+    };
+  } catch (error) {
+    log.error("Failed to get cache stats:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
+ipcMain.handle("CLEAR_CACHE", async () => {
+  try {
+    const db = getDb();
+    const files = db
+      .select()
+      .from(schema.cacheFiles)
+      .all();
+
+    const activeFiles = files.filter((f) => !f.deletedAt);
+    let deletedCount = 0;
+
+    for (const file of activeFiles) {
+      try {
+        if (fs.existsSync(file.filePath)) {
+          fs.unlinkSync(file.filePath);
+        }
+        db.update(schema.cacheFiles)
+          .set({ deletedAt: new Date() })
+          .where(eq(schema.cacheFiles.id, file.id))
+          .run();
+        deletedCount++;
+      } catch (err) {
+        log.error(`Failed to delete cache file ${file.filePath}:`, err);
+      }
+    }
+
+    log.info(`Cleared ${deletedCount} cached files`);
+
+    return {
+      ok: true,
+      deletedCount,
+    };
+  } catch (error) {
+    log.error("Failed to clear cache:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
+ipcMain.handle("OPEN_CACHE_FOLDER", async () => {
+  try {
+    const { app } = await import("electron");
+    const appDataPath = app.getPath("userData");
+    const genImagesDir = path.join(appDataPath, "gen", "images");
+
+    if (!fs.existsSync(genImagesDir)) {
+      fs.mkdirSync(genImagesDir, { recursive: true });
+    }
+
+    shell.openPath(genImagesDir);
+
+    return { ok: true };
+  } catch (error) {
+    log.error("Failed to open cache folder:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 });

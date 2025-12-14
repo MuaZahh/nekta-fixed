@@ -19,3 +19,15 @@ export const mediaAssets = sqliteTable('media_assets', {
   duration: integer('duration'), // in milliseconds, for video/audio
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 })
+
+export const cacheFiles = sqliteTable('cache_files', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  uid: text('uid').notNull().unique(),
+  filePath: text('file_path').notNull(),
+  fileName: text('file_name').notNull(),
+  mimeType: text('mime_type').notNull(),
+  size: integer('size').notNull(), // in bytes
+  category: text('category').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+})

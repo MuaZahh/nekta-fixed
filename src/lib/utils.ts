@@ -20,9 +20,11 @@ export const blobToBase64 = (blob: Blob): Promise<string> => {
 }
 
 export const urlToBase64 = async (url: string): Promise<string> => {
-  const response = await fetch(url)
-  const blob = await response.blob()
-  return blobToBase64(blob)
+  const result = await window.ipcRenderer.invoke('FETCH_IMAGE_BASE64', url)
+  if (!result.ok) {
+    throw new Error(result.error || 'Failed to fetch image')
+  }
+  return result.data
 }
 
 export function delay(ms: number) {

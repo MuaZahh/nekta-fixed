@@ -1,10 +1,11 @@
-import { useState } from 'react'
-import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react'
+import { useState, useEffect } from 'react'
+import { EyeIcon, EyeSlashIcon, TrashIcon, FolderOpenIcon } from '@phosphor-icons/react'
 import { useSettingsStore } from '../state/settings'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Section } from '@/components/shared/Section'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { Button } from '@/components/ui/button'
 import { AIProviderType } from '@/lib/types'
 
 import openaiIcon from '@/assets/icons/openai-logo.svg'
@@ -46,6 +47,19 @@ const apiKeyData: ApiKeyDataItem[] = [
   },
 ]
 
+type CacheStats = {
+  fileCount: number
+  totalSize: number
+}
+
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+}
+
 export const SettingsPage = () => {
   const { apiKeys, setApiKey } = useSettingsStore()
   const [revealedKeys, setRevealedKeys] = useState<Record<AIProviderType, boolean>>({
@@ -54,6 +68,35 @@ export const SettingsPage = () => {
     replicate: false,
     gemini: false,
   })
+  const [cacheStats, setCacheStats] = useState<CacheStats>({ fileCount: 0, totalSize: 0 })
+  const [isClearing, setIsClearing] = useState(false)
+
+  const fetchCacheStats = async () => {
+    const result = await window.ipcRenderer.invoke('GET_CACHE_STATS')
+    if (result.ok) {
+      setCacheStats({ fileCount: result.fileCount, totalSize: result.totalSize })
+    }
+  }
+
+  useEffect(() => {
+    fetchCacheStats()
+  }, [])
+
+  const handleClearCache = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${cacheStats.fileCount} cached files (${formatBytes(cacheStats.totalSize)})?`
+    )
+    if (!confirmed) return
+
+    setIsClearing(true)
+    await window.ipcRenderer.invoke('CLEAR_CACHE')
+    await fetchCacheStats()
+    setIsClearing(false)
+  }
+
+  const handleOpenCacheFolder = () => {
+    window.ipcRenderer.invoke('OPEN_CACHE_FOLDER')
+  }
 
   const toggleReveal = (type: AIProviderType) => {
     setRevealedKeys((prev) => ({ ...prev, [type]: !prev[type] }))
@@ -103,6 +146,43 @@ export const SettingsPage = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </Section>
+
+          {/* Cache Section */}
+          <Section title="Cache">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-neutral-900">
+                    {cacheStats.fileCount} files
+                  </span>
+                  <span className="text-xs text-neutral-500">
+                    {formatBytes(cacheStats.totalSize)} total
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOpenCacheFolder}
+                  className="flex-1"
+                >
+                  <FolderOpenIcon size={16} />
+                  Open Folder
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearCache}
+                  disabled={isClearing || cacheStats.fileCount === 0}
+                  className="flex-1"
+                >
+                  <TrashIcon size={16} />
+                  {isClearing ? 'Clearing...' : 'Clear Cache'}
+                </Button>
+              </div>
             </div>
           </Section>
         </div>

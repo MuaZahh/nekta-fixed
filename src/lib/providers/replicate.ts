@@ -4,6 +4,20 @@ import { AspectRatio, ImagGenModelMeta } from "@/type/content"
 import { delay, urlToBase64 } from "../utils"
 import { ReplicateDefaultOutputTransformer } from "@/providers/replicate/images"
 
+type FetchProxyResponse = {
+  ok: boolean
+  status: number
+  statusText: string
+  data: unknown
+}
+
+async function proxyFetch(
+  url: string,
+  options: { method: string; headers: Record<string, string>; body?: string }
+): Promise<FetchProxyResponse> {
+  return window.ipcRenderer.invoke('FETCH_PROXY', { url, ...options })
+}
+
 export class ReplicateImageGenProvider implements ImageGenProvider {
   provider = 'replicate' as const
 
@@ -32,7 +46,7 @@ export class ReplicateImageGenProvider implements ImageGenProvider {
 
     const url = `https://api.replicate.com/v1/models/${model.id}/predictions`
 
-    const response = await fetch(url, {
+    const response = await proxyFetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -46,9 +60,10 @@ export class ReplicateImageGenProvider implements ImageGenProvider {
       throw new Error(`Image generation failed: ${response.statusText}`)
     }
 
-    const prediction = await response.json()
-    const getUrl = prediction['urls']['get']
-    let status = prediction['status']
+    const prediction = response.data as Record<string, unknown>
+    const urls = prediction['urls'] as Record<string, string>
+    const getUrl = urls['get']
+    let status = prediction['status'] as string
     let output = prediction['output']
 
     if (this.isStatusFailed(status)) {
@@ -58,7 +73,7 @@ export class ReplicateImageGenProvider implements ImageGenProvider {
     while (!this.isStatusFailed(status) && !this.isStatusOk(status)) {
       await delay(1_000)
 
-      const res = await fetch(getUrl, {
+      const res = await proxyFetch(getUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -66,8 +81,8 @@ export class ReplicateImageGenProvider implements ImageGenProvider {
         }
       })
 
-      const data = await res.json()
-      status = data['status']
+      const data = res.data as Record<string, unknown>
+      status = data['status'] as string
       output = data['output']
     }
 
@@ -76,8 +91,14 @@ export class ReplicateImageGenProvider implements ImageGenProvider {
     }
 
     const transformer = model.responseTransformer ?? ReplicateDefaultOutputTransformer
-    const urls = transformer(output)
-    const imageUrl = urls[0]
+    const imageUrls = transformer(output)
+    let imageUrl = null
+
+    if (Array.isArray(imageUrls)) {
+      imageUrls[0]
+    } else {
+      imageUrl = imageUrls
+    }
 
     if (!imageUrl) {
       throw new Error('No image URL returned')
