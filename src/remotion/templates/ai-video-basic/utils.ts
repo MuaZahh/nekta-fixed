@@ -58,12 +58,3 @@ export const calculateBlur = ({
 
   return 0;
 };
-
-export const getTimelinePath = (proj: string) =>
-  `content/${proj}/timeline.json`;
-
-export const getImagePath = (proj: string, uid: string) =>
-  `content/${proj}/images/${uid}.png`;
-
-export const getAudioPath = (proj: string, uid: string) =>
-  `content/${proj}/audio/${uid}.mp3`;

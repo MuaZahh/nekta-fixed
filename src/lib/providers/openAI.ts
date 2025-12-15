@@ -58,11 +58,15 @@ export class OpenAITTSProvider implements TTSProvider {
     }
 
     const transcription = await transcriptionResponse.json()
+    const duration = transcription.duration
     const timestamps: TimestampedTranscription = {
       words: [],
       wordStartTimestampSeconds: [],
       wordEndTimestampSeconds: []
     }
+
+    // Set last word end to audio duration to preseve pauses between sentences
+    transcription.words[transcription.words.length - 1].end = duration
 
     if (transcription.words) {
       for (const word of transcription.words) {

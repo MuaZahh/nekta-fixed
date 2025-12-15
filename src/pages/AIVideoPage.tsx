@@ -371,7 +371,7 @@ export const AIVideoPage = () => {
       supportedRatios.every((ratio) => model.aspectRatios.includes(ratio))
     )
   )
-
+  
   return (
     <div className="flex flex-col h-full w-full">
       <PageHeader title="AI Video" />
