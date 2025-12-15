@@ -64,7 +64,10 @@ export const AIVideo: React.FC<z.infer<typeof aiVideoSchema>> = ({
         const { startFrame, duration } = calculateFrameTiming(
           element.startMs,
           element.endMs,
-          { includeIntro: index === 0 },
+          { 
+            includeIntro: index === 0,
+            addIntroOffset: index !== 0, 
+          },
         );
 
         return (
