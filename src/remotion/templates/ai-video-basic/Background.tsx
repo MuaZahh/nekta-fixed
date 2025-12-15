@@ -5,7 +5,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { BackgroundElement } from "./types";
-import { FPS, IMAGE_HEIGHT, IMAGE_WIDTH } from "@/remotion/constants";
+import { FPS } from "@/remotion/constants";
 import { calculateBlur } from "./utils";
 
 const EXTRA_SCALE = 0.2;
@@ -17,10 +17,6 @@ export const Background: React.FC<{
   const localMs = (frame / FPS) * 1000;
   const { width, height } = useVideoConfig();
 
-  const imageRatio = IMAGE_HEIGHT / IMAGE_WIDTH;
-
-  const imgWidth = height;
-  const imgHeight = imgWidth * imageRatio;
   let animScale = 1 + EXTRA_SCALE;
 
   const currentScaleAnim = item.animations?.find(
@@ -38,25 +34,22 @@ export const Background: React.FC<{
       currentScaleAnim.from;
   }
 
-  const imgScale = animScale;
-  const top = -(imgHeight * imgScale - height) / 2;
-  const left = -(imgWidth * imgScale - width) / 2;
-
   const blur = calculateBlur({ item, localMs });
   const maxBlur = 25;
-
   const currentBlur = maxBlur * blur;
 
   return (
-    <AbsoluteFill>
+    <AbsoluteFill style={{ inset: 0 }}>
       <Img
         src={item.imageUrl}
         style={{
-          width: imgWidth * imgScale,
-          height: imgHeight * imgScale,
+          width,
+          height,
           position: "absolute",
-          top,
-          left,
+          top: "50%",
+          left: "50%",
+          transform: `translate(-50%, -50%) scale(${animScale})`,
+          transformOrigin: "center",
           filter: `blur(${currentBlur}px)`,
           WebkitFilter: `blur(${currentBlur}px)`,
         }}
