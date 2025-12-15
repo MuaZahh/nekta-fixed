@@ -5,11 +5,19 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { Word } from "./Word";
+import { fitText } from "@remotion/layout-utils";
+import { loadFont } from "@remotion/google-fonts/BreeSerif";
+import { WordTimestamp } from "@/remotion/templates/ai-video-basic/types";
 
-const Subtitle: React.FC<{ text: string }> = ({ text }) => {
+interface SubtitleProps {
+  text: string;
+  wordTimestamps?: WordTimestamp[];
+}
+
+const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width } = useVideoConfig();
+  const { fontFamily } = loadFont();
 
   const enter = spring({
     frame,
@@ -20,13 +28,144 @@ const Subtitle: React.FC<{ text: string }> = ({ text }) => {
     durationInFrames: 5,
   });
 
+  const currentTimeMs = (frame / fps) * 1000;
+
+  const activeWordIndex = wordTimestamps?.findIndex(
+    (wt) => currentTimeMs >= wt.startMs && currentTimeMs < wt.endMs
+  ) ?? -1;
+
+  const desiredFontSize = 120;
+
+  const fittedText = fitText({
+    fontFamily,
+    text,
+    withinWidth: width * 0.8,
+  });
+
+  const fontSize = Math.min(desiredFontSize, fittedText.fontSize);
+
+  if (!wordTimestamps || wordTimestamps.length === 0) {
+    return (
+      <AbsoluteFill>
+        <AbsoluteFill
+          style={{
+            justifyContent: "center",
+            alignItems: "center",
+            top: undefined,
+            bottom: 350,
+            height: 150,
+          }}
+        >
+          <div
+            style={{
+              fontSize,
+              color: "white",
+              WebkitTextStroke: "20px black",
+              fontFamily,
+              textTransform: "uppercase",
+              textAlign: "center",
+              transform: `scale(${0.8 + 0.2 * enter}) translateY(${50 * (1 - enter)}px)`,
+            }}
+          >
+            {text}
+          </div>
+        </AbsoluteFill>
+        <AbsoluteFill
+          style={{
+            justifyContent: "center",
+            alignItems: "center",
+            top: undefined,
+            bottom: 350,
+            height: 150,
+          }}
+        >
+          <div
+            style={{
+              fontSize,
+              color: "white",
+              fontFamily,
+              textTransform: "uppercase",
+              textAlign: "center",
+              transform: `scale(${0.8 + 0.2 * enter}) translateY(${50 * (1 - enter)}px)`,
+            }}
+          >
+            {text}
+          </div>
+        </AbsoluteFill>
+      </AbsoluteFill>
+    );
+  }
+
   return (
     <AbsoluteFill>
-      <AbsoluteFill>
-        <Word stroke enterProgress={enter} text={text} />
+      <AbsoluteFill
+        style={{
+          justifyContent: "center",
+          alignItems: "center",
+          top: undefined,
+          bottom: 350,
+          height: 150,
+        }}
+      >
+        <div
+          style={{
+            fontSize,
+            fontFamily,
+            textTransform: "uppercase",
+            textAlign: "center",
+            transform: `scale(${0.8 + 0.2 * enter}) translateY(${50 * (1 - enter)}px)`,
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: fontSize * 0.25,
+          }}
+        >
+          {wordTimestamps.map((wt, index) => (
+            <span
+              key={index}
+              style={{
+                color: index === activeWordIndex ? "yellow" : "white",
+                WebkitTextStroke: "20px black",
+              }}
+            >
+              {wt.word}
+            </span>
+          ))}
+        </div>
       </AbsoluteFill>
-      <AbsoluteFill>
-        <Word enterProgress={enter} text={text} stroke={false} />
+      <AbsoluteFill
+        style={{
+          justifyContent: "center",
+          alignItems: "center",
+          top: undefined,
+          bottom: 350,
+          height: 150,
+        }}
+      >
+        <div
+          style={{
+            fontSize,
+            fontFamily,
+            textTransform: "uppercase",
+            textAlign: "center",
+            transform: `scale(${0.8 + 0.2 * enter}) translateY(${50 * (1 - enter)}px)`,
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: fontSize * 0.25,
+          }}
+        >
+          {wordTimestamps.map((wt, index) => (
+            <span
+              key={index}
+              style={{
+                color: index === activeWordIndex ? "yellow" : "white",
+              }}
+            >
+              {wt.word}
+            </span>
+          ))}
+        </div>
       </AbsoluteFill>
     </AbsoluteFill>
   );

@@ -5,6 +5,7 @@ import {
   BackgroundElement,
   TextElement,
   ElementAnimation,
+  WordTimestamp,
 } from '@/remotion/templates/ai-video-basic/types'
 
 export const TitleList = z.object({
@@ -146,11 +147,22 @@ export const createTimelineFromSlides = (
     })
 
     let currentWords: string[] = []
+    let currentWordTimestamps: WordTimestamp[] = []
     let segmentStartMs = wordStartTimestampSeconds[0] * 1000 + durationMs
     let segmentEndMs = durationMs
 
     for (let i = 0; i < words.length; i++) {
       currentWords.push(words[i])
+
+      // Store word timestamp relative to segment start
+      const wordStartMs = wordStartTimestampSeconds[i] * 1000 + durationMs - segmentStartMs
+      const wordEndMs = wordEndTimestampSeconds[i] * 1000 + durationMs - segmentStartMs
+      currentWordTimestamps.push({
+        word: words[i],
+        startMs: wordStartMs,
+        endMs: wordEndMs,
+      })
+
       segmentEndMs = wordEndTimestampSeconds[i] * 1000 + durationMs
 
       if (currentWords.length >= MAX_WORDS_PER_SEGMENT || i === words.length - 1) {
@@ -160,10 +172,12 @@ export const createTimelineFromSlides = (
           text: currentWords.join(' '),
           position: 'center',
           animations: getTextAnimations(),
+          wordTimestamps: currentWordTimestamps,
         }
         timeline.text.push(textElem)
 
         currentWords = []
+        currentWordTimestamps = []
         if (i < words.length - 1) {
           segmentStartMs = wordStartTimestampSeconds[i + 1] * 1000 + durationMs
         }
