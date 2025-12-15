@@ -105,6 +105,8 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps }) => {
           top: undefined,
           bottom: 350,
           height: 150,
+          paddingLeft: 50,
+          paddingRight: 50
         }}
       >
         <div
@@ -140,6 +142,8 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps }) => {
           top: undefined,
           bottom: 350,
           height: 150,
+          paddingLeft: 50,
+          paddingRight: 50
         }}
       >
         <div
