@@ -1,8 +1,9 @@
-import { app, BrowserWindow, ipcMain, shell, Menu, protocol, net } from "electron";
+import { app, BrowserWindow, ipcMain, shell, Menu, protocol } from "electron";
 import { createRequire } from "node:module";
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { update } from "./update";
 
 import "../handlers/renderHandler";
@@ -167,9 +168,40 @@ function createMenu() {
 }
 
 app.whenReady().then(() => {
-  protocol.handle("media", (request) => {
+  protocol.handle("media", async (request) => {
     const filePath = decodeURIComponent(request.url.replace("media://", ""));
-    return net.fetch(pathToFileURL(filePath).toString());
+
+    try {
+      const stat = fs.statSync(filePath);
+      const fileBuffer = fs.readFileSync(filePath);
+
+      // Determine content type based on extension
+      const ext = path.extname(filePath).toLowerCase();
+      const mimeTypes: Record<string, string> = {
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav',
+        '.ogg': 'audio/ogg',
+        '.mp4': 'video/mp4',
+        '.webm': 'video/webm',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+      };
+      const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+      return new Response(fileBuffer, {
+        status: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Content-Length': stat.size.toString(),
+        },
+      });
+    } catch (error) {
+      console.error('Error serving media file:', filePath, error);
+      return new Response('File not found', { status: 404 });
+    }
   });
 
   createMenu();

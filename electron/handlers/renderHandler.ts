@@ -3,11 +3,110 @@ import log from "electron-log/main";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import http from "http";
 import { eq, desc } from "drizzle-orm";
 import render from "../remotion/render";
 import { initDb, getDb, schema } from "../libs/db";
 
 initDb();
+
+// Persistent media server for preview
+let previewMediaServer: http.Server | null = null;
+let previewMediaServerPort: number | null = null;
+
+function startPreviewMediaServer(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    if (previewMediaServer && previewMediaServerPort) {
+      resolve(previewMediaServerPort);
+      return;
+    }
+
+
+    setInterval(() => {
+      const memoryInfo = process.memoryUsage();
+      console.log('Memory:', {
+        heapUsed: `${Math.round(memoryInfo.heapUsed / 1024 / 1024)} MB`,
+        heapTotal: `${Math.round(memoryInfo.heapTotal / 1024 / 1024)} MB`,
+        rss: `${Math.round(memoryInfo.rss / 1024 / 1024)} MB`
+      });
+    }, 5000);
+
+    const server = http.createServer((req, res) => {
+      if (!req.url) {
+        res.writeHead(400);
+        res.end("Bad request");
+        return;
+      }
+
+      const url = new URL(req.url, "http://localhost");
+      const filePath = url.searchParams.get("path");
+
+      if (!filePath) {
+        res.writeHead(400);
+        res.end("Missing path parameter");
+        return;
+      }
+
+      const decodedPath = decodeURIComponent(filePath);
+
+      if (!fs.existsSync(decodedPath)) {
+        log.error(`Preview media server: File not found: ${decodedPath}`);
+        res.writeHead(404);
+        res.end("File not found");
+        return;
+      }
+
+      const ext = path.extname(decodedPath).toLowerCase();
+      const mimeTypes: Record<string, string> = {
+        ".mp3": "audio/mpeg",
+        ".wav": "audio/wav",
+        ".ogg": "audio/ogg",
+        ".mp4": "video/mp4",
+        ".webm": "video/webm",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+      };
+
+      const contentType = mimeTypes[ext] || "application/octet-stream";
+      const stat = fs.statSync(decodedPath);
+
+      res.writeHead(200, {
+        "Content-Type": contentType,
+        "Content-Length": stat.size,
+        "Access-Control-Allow-Origin": "*",
+      });
+
+      fs.createReadStream(decodedPath).pipe(res);
+    });
+
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      if (address && typeof address === "object") {
+        previewMediaServer = server;
+        previewMediaServerPort = address.port;
+        log.info(`Preview media server started on port ${address.port}`);
+        resolve(address.port);
+      } else {
+        reject(new Error("Failed to get server address"));
+      }
+    });
+
+    server.on("error", reject);
+  });
+}
+
+// Transform media:// URL to http:// URL
+function transformMediaUrl(mediaUrl: string, port: number): string {
+  if (!mediaUrl.startsWith("media://")) {
+    return mediaUrl;
+  }
+  const encodedPath = mediaUrl.slice("media://".length);
+  const filePath = decodeURIComponent(encodedPath);
+  return `http://127.0.0.1:${port}/?path=${encodeURIComponent(filePath)}`;
+}
 
 // Proxy fetch requests to bypass CORS
 ipcMain.handle(
@@ -376,6 +475,41 @@ ipcMain.handle(
       };
     } catch (error) {
       log.error("Failed to save generated audio:", error);
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+);
+
+// Transform timeline media:// URLs to http:// URLs for preview
+ipcMain.handle(
+  "TRANSFORM_TIMELINE_FOR_PREVIEW",
+  async (_event, timeline: {
+    shortTitle: string;
+    elements: Array<{ imageUrl: string; [key: string]: unknown }>;
+    text: Array<unknown>;
+    audio: Array<{ audioUrl: string; [key: string]: unknown }>;
+  }) => {
+    try {
+      const port = await startPreviewMediaServer();
+
+      const transformedTimeline = {
+        ...timeline,
+        elements: timeline.elements.map((el) => ({
+          ...el,
+          imageUrl: transformMediaUrl(el.imageUrl, port),
+        })),
+        audio: timeline.audio.map((el) => ({
+          ...el,
+          audioUrl: transformMediaUrl(el.audioUrl, port),
+        })),
+      };
+
+      return { ok: true, timeline: transformedTimeline };
+    } catch (error) {
+      log.error("Failed to transform timeline:", error);
       return {
         ok: false,
         error: error instanceof Error ? error.message : "Unknown error",
