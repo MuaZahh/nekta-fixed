@@ -138,9 +138,7 @@ export const AIVideoPage = () => {
     ? Math.max(1, Math.ceil(((timeline.audio[timeline.audio.length - 1]?.endMs || 0) / 1000) * FPS) + INTRO_DURATION)
     : 1
 
-  const renderVideo = async () => {
-    if (!timeline) return
-
+  const renderVideo = async (timelineToRender: Timeline) => {
     setRenderError(null)
     setRenderProgress({
       renderedFrames: 0,
@@ -153,10 +151,14 @@ export const AIVideoPage = () => {
     })
     setIsRendering(true)
 
+    const renderDurationInFrames = timelineToRender.audio.length > 0
+      ? Math.max(1, Math.ceil(((timelineToRender.audio[timelineToRender.audio.length - 1]?.endMs || 0) / 1000) * FPS) + INTRO_DURATION)
+      : 1
+
     const inputProps = {
-      timeline,
+      timeline: timelineToRender,
       metadata: {
-        durationInFrames,
+        durationInFrames: renderDurationInFrames,
         compositionWidth: 1080,
         compositionHeight: 1920,
         fps: FPS,
@@ -283,8 +285,8 @@ export const AIVideoPage = () => {
     return { audioUrl: saveResult.mediaUrl, isNew: true }
   }
 
-  const onGeneratePreview = async () => {
-    if (!slides.length) return
+  const onGeneratePreview = async (): Promise<Timeline | null> => {
+    if (!slides.length) return null
 
     setPreviewGenerating(true)
 
@@ -323,8 +325,9 @@ export const AIVideoPage = () => {
 
     // Generate timeline from updated slides
     // We need to get the latest slides state
+    let generatedTimeline: Timeline | null = null
     setSlides((currentSlides) => {
-      const generatedTimeline = createTimelineFromSlides(currentSlides, title)
+      generatedTimeline = createTimelineFromSlides(currentSlides, title)
       setTimeline(generatedTimeline)
       return currentSlides
     })
@@ -332,6 +335,17 @@ export const AIVideoPage = () => {
     setPreviewGenerating(false)
     setPreviewProgress(null)
     setIsPreviewGenerated(true)
+
+    return generatedTimeline
+  }
+
+  const onSaveVideo = async () => {
+    if (!slides.length) return
+
+    const generatedTimeline = await onGeneratePreview()
+    if (!generatedTimeline) return
+
+    await renderVideo(generatedTimeline)
   }
 
   const onGenerateTitles = async () => {
@@ -590,8 +604,8 @@ export const AIVideoPage = () => {
               variant="default"
               className="border"
               size="sm"
-              onClick={renderVideo}
-              disabled={!isPreviewGenerated || !timeline || isRendering}
+              onClick={onSaveVideo}
+              disabled={!slides.length || previewGenerating || isRendering}
             >
               <DownloadSimpleIcon />
               Save video
