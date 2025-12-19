@@ -1,6 +1,7 @@
 import { Player } from '@remotion/player'
 import { StitchingState } from '@remotion/renderer'
 import { useState, useEffect } from 'react'
+import { flushSync } from 'react-dom'
 import {
   SparkleIcon,
   PlusIcon,
@@ -323,13 +324,16 @@ export const AIVideoPage = () => {
       )
     }
 
+
     // Generate timeline from updated slides
     // We need to get the latest slides state
     let generatedTimeline: Timeline | null = null
-    setSlides((currentSlides) => {
-      generatedTimeline = createTimelineFromSlides(currentSlides, title)
-      setTimeline(generatedTimeline)
-      return currentSlides
+    flushSync(() => {
+      setSlides((currentSlides) => {
+        generatedTimeline = createTimelineFromSlides(currentSlides, title)
+        setTimeline(generatedTimeline)
+        return currentSlides
+      })
     })
 
     setPreviewGenerating(false)
