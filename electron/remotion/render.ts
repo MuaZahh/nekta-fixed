@@ -270,7 +270,8 @@ if (app.isPackaged) {
 export default async function render(
   inputProps: Record<string, unknown>,
   onProgress?: RenderMediaOnProgress,
-  compositionId: string = "HelloWorld"
+  compositionId: string = "HelloWorld",
+  title?: string
 ) {
   // Start media server to serve local files during rendering
   const { server: mediaServer, port: mediaServerPort } = await createMediaServer();
@@ -376,10 +377,14 @@ export default async function render(
 
     const durationMs = Math.round((composition.durationInFrames / composition.fps) * 1000);
 
+    const videoName = title
+      ? `${title} (${new Date().toLocaleDateString()})`
+      : `Video ${new Date().toLocaleDateString()}`;
+
     db.insert(schema.mediaAssets).values({
       uid: mediaUid,
       libraryId: defaultLibrary.id,
-      name: `Reddit Story ${new Date().toLocaleDateString()}`,
+      name: videoName,
       filePath: outputPath,
       type: "video",
       duration: durationMs,

@@ -163,17 +163,19 @@ ipcMain.handle("FETCH_IMAGE_BASE64", async (_event, url: string) => {
 
 ipcMain.handle(
   "RENDER_MEDIA",
-  async (event, inputProps: Record<string, unknown> = {}, compositionId?: string) => {
+  async (event, inputProps: Record<string, unknown> = {}, compositionId?: string, title?: string) => {
     try {
       log.info("Rendering media...");
       log.info("Input props:", JSON.stringify(inputProps, null, 2));
       log.info("Composition ID:", compositionId);
+      log.info("Title:", title);
       const result = await render(
         inputProps,
         (progress) => {
           event.sender.send("RENDER_PROGRESS", progress);
         },
-        compositionId
+        compositionId,
+        title
       );
       return { success: true, ...result };
     } catch (error) {

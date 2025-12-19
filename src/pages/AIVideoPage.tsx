@@ -166,7 +166,7 @@ export const AIVideoPage = () => {
       },
     }
 
-    const response = await window.ipcRenderer.invoke('RENDER_MEDIA', inputProps, 'AIVideo')
+    const response = await window.ipcRenderer.invoke('RENDER_MEDIA', inputProps, 'AIVideo', title)
 
     if (response.success) {
       console.log('Video rendered successfully!')
