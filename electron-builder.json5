@@ -30,6 +30,11 @@
     allowToChangeInstallationDirectory: true,
     deleteAppDataOnUninstall: false,
   },
+  linux: {
+    target: ["AppImage", "snap"],
+    icon: "build/icons/png",
+    category: "AudioVideo",
+  },
   publish: {
     provider: "generic",
     channel: "latest",
