@@ -7,7 +7,6 @@ import {
   PlusIcon,
   DownloadSimpleIcon,
   VideoCameraIcon,
-  XIcon,
   CircleNotchIcon,
   FolderOpenIcon,
 } from '@phosphor-icons/react'
@@ -25,20 +24,21 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ImageGenModelsData } from '@/providers/replicate/images'
-import { ArtStyles, AiStoryTopics } from '@/data/contentStyles'
+import { ArtStyles } from '@/data/contentStyles'
 import { AspectRatio } from '@/type/content'
 import { VoiceSelect } from '@/components/shared/VoiceSelect'
 import { ArtStyleSelect } from '@/components/shared/ArtStyleSelect'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { AiVideoSlideType, WizardStep } from './ai-video/types'
+import { AiVideoSlideType } from './ai-video/types'
 import { SlideItem } from './ai-video/AIVideoSlide'
 import { Section } from '@/components/shared/Section'
 import { OpenAIStructuredGenProvider, OpenAITTSProvider } from '@/lib/providers/openAI'
-import { getGenerateImageDescriptionPrompt, getGenerateStoryPrompt, getGenerateTitlesPrompt, StoryScript, StoryWithImages, TitleList, createTimelineFromSlides } from './ai-video/service'
+import { getGenerateImageDescriptionPrompt, getGenerateStoryPrompt, StoryScript, StoryWithImages, createTimelineFromSlides } from './ai-video/service'
 import { AIVideo, aiVideoSchema } from '@/remotion/templates/ai-video-basic/AIVideo'
 import { Timeline } from '@/remotion/templates/ai-video-basic/types'
 import { FPS, INTRO_DURATION } from '@/remotion/constants'
 import { ReplicateImageGenProvider } from '@/lib/providers/replicate'
+import { GenerateStoryModal } from './ai-video/GenerateStoryModal'
 
 
 const supportedRatios: AspectRatio[] = ['9:16']
@@ -90,8 +90,6 @@ export const AIVideoPage = () => {
   const setRoute = useRouter((state) => state.setRoute)
   const [slides, setSlides] = useState<AiVideoSlideType[]>([])
   const [wizardOpen, setWizardOpen] = useState(false)
-  const [wizardStep, setWizardStep] = useState<WizardStep>('create-titles')
-  const [generating, setGenerating] = useState(false)
   const [isRendering, setIsRendering] = useState(false)
   const [renderProgress, setRenderProgress] = useState<RenderProgress | null>(null)
   const [renderError, setRenderError] = useState<RenderError | null>(null)
@@ -107,9 +105,6 @@ export const AIVideoPage = () => {
   )
   const [title, setTitle] = useState('')
 
-  const [topic, setTopic] = useState<string>('')
-  const [generatedTitles, setGeneratedTitles] = useState<string[]>([])
-  const [selectedTitle, setSelectedTitle] = useState<string>('')
   const [isPreviewGenerated, setIsPreviewGenerated] = useState(false)
   const [timeline, setTimeline] = useState<Timeline | null>(null)
   const [previewGenerating, setPreviewGenerating] = useState(false)
@@ -352,36 +347,10 @@ export const AIVideoPage = () => {
     await renderVideo(generatedTimeline)
   }
 
-  const onGenerateTitles = async () => {
-    if (!topic) return
-    setGenerating(true)
-    const p = new OpenAIStructuredGenProvider()
-
-    const titles = await p.generate(
-      getGenerateTitlesPrompt(topic),
-      TitleList,
-    )
-
-    setGeneratedTitles(titles.titles)
-    setWizardStep('select-title')
-    setGenerating(false)
-  }
-
-  const onGenerateStory = async () => {
-    if (!selectedTitle) return
-    setGenerating(true)
-    const storySlides = await generateStory(selectedTitle, topic)
+  const onGenerateStory = async (storyTitle: string, storyTopic: string) => {
+    const storySlides = await generateStory(storyTitle, storyTopic)
     setSlides(storySlides)
-    setTitle(selectedTitle)
-    closeWizard()
-    setGenerating(false)
-  }
-
-  const closeWizard = () => {
-    setWizardOpen(false)
-    setWizardStep('create-titles')
-    setGeneratedTitles([])
-    setSelectedTitle('')
+    setTitle(storyTitle)
   }
 
   const filteredModels = ImageGenModelsData.flatMap((provider) =>
@@ -618,138 +587,11 @@ export const AIVideoPage = () => {
         </div>
       </div>
 
-      {/* Wizard Modal */}
-      {wizardOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="relative bg-white rounded-2xl p-6 w-[480px] flex flex-col gap-5 shadow-2xl">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={closeWizard}
-              className="absolute right-3 top-3"
-            >
-              <XIcon size={18} />
-            </Button>
-
-            <div className="flex flex-col gap-1">
-              <h2 className="text-lg font-semibold text-neutral-900">
-                Generate Story with AI
-              </h2>
-              <p className="text-sm text-neutral-500">
-                {wizardStep === 'create-titles'
-                  ? 'Choose a topic to generate story titles'
-                  : 'Select a title to generate your story'}
-              </p>
-            </div>
-
-            {/* Step indicator */}
-            <div className="flex items-center gap-2">
-              <div
-                className={`h-1 flex-1 rounded-full transition-colors ${
-                  wizardStep === 'create-titles'
-                    ? 'bg-neutral-900'
-                    : 'bg-neutral-200'
-                }`}
-              />
-              <div
-                className={`h-1 flex-1 rounded-full transition-colors ${
-                  wizardStep === 'select-title'
-                    ? 'bg-neutral-900'
-                    : 'bg-neutral-200'
-                }`}
-              />
-            </div>
-
-            {wizardStep === 'create-titles' && (
-              <>
-                <div className="flex flex-col gap-2">
-                  <Label>Script Topic</Label>
-                  <Select value={topic} onValueChange={setTopic}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a topic..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {AiStoryTopics.map((t) => (
-                          <SelectItem key={t.uid} value={t.uid}>
-                            {t.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <Button
-                    onClick={onGenerateTitles}
-                    disabled={generating || !topic}
-                    size='sm'
-                  >
-                    {generating ? (
-                      <>Generating...</>
-                    ) : (
-                      <>
-                        <SparkleIcon size={14} weight="fill" />
-                        Generate Titles
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </>
-            )}
-
-            {wizardStep === 'select-title' && (
-              <>
-                <div className="flex flex-col gap-2">
-                  <Label>Select a Title</Label>
-                  <Select
-                    value={selectedTitle}
-                    onValueChange={setSelectedTitle}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choose a title..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {generatedTitles.map((t) => (
-                          <SelectItem key={t} value={t}>
-                            {t}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex justify-between pt-2">
-                  <Button
-                    variant="ghost"
-                    size='sm'
-                    onClick={() => setWizardStep('create-titles')}
-                  >
-                    Back
-                  </Button>
-                  <Button
-                    onClick={onGenerateStory}
-                    size='sm'
-                    disabled={generating || !selectedTitle}
-                  >
-                    {generating ? (
-                      <>Generating...</>
-                    ) : (
-                      <>
-                        <SparkleIcon size={14} weight="fill" />
-                        Generate Story
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      <GenerateStoryModal
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        onGenerate={onGenerateStory}
+      />
     </div>
   )
 }
