@@ -42,6 +42,8 @@ import { GenerateStoryModal } from './ai-video/GenerateStoryModal'
 
 
 const supportedRatios: AspectRatio[] = ['9:16']
+const DEFAULT_ART_STYLE = 'realism'
+const DEFAULT_ART_STYLE_DESC = ArtStyles.find((s) => s.uid === DEFAULT_ART_STYLE)?.description || ''
 
 interface RenderProgress {
   renderedFrames: number
@@ -99,10 +101,8 @@ export const AIVideoPage = () => {
   const [imageModel, setImageModel] = useState<string>(
     'black-forest-labs/flux-schnell'
   )
-  const [artStyle, setArtStyle] = useState<string>('realism')
-  const [artStyleDesc, setArtStyleDesc] = useState<string>(
-    ArtStyles.find((s) => s.uid === 'realism')?.description || ''
-  )
+  const [artStyle, setArtStyle] = useState<string>(DEFAULT_ART_STYLE)
+  const [artStyleDesc, setArtStyleDesc] = useState<string>(DEFAULT_ART_STYLE_DESC)
   const [title, setTitle] = useState('')
 
   const [isPreviewGenerated, setIsPreviewGenerated] = useState(false)
