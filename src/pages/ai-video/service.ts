@@ -51,6 +51,24 @@ export const getGenerateImageDescriptionPrompt = (storyText: string) => {
   Story sentences must be in the same order as in the story and their content must be preserved.
   Each image must match 1-2 sentence from the story.
   Images must show story content in a way that is visually appealing and engaging, not just characters.
+
+  **CHARACTER CONSISTENCY REQUIREMENT**:
+
+When generating image descriptions for video scenes that include characters:
+
+1. **CREATE DETAILED CHARACTER PROFILES FIRST**: Before writing scene descriptions, define each character with comprehensive visual attributes:
+   - Gender and approximate age
+   - Ethnicity and skin tone
+   - Hair (color, length, style, texture)
+   - Face (eye color, facial features, expressions)
+   - Body type and height
+   - Clothing (specific garments, colors, patterns, accessories)
+   - Any distinguishing features (scars, tattoos, glasses, etc.)
+
+2. **REPEAT THE FULL CHARACTER DESCRIPTION IN EVERY SCENE**: Each image description will be sent to a DIFFERENT image generation system with NO memory of previous scenes. Therefore, you MUST copy-paste the COMPLETE character description into EVERY scene where that character appears. Do NOT use shortcuts like "same character as before" or "wearing the same outfit" — these references will fail because each image generator works in isolation.
+
+3. **USE IDENTICAL WORDING**: To maximize visual consistency across scenes, use the EXACT SAME words and phrases to describe each character every time. Varying the description (even with synonyms) will produce inconsistent results.
+
   Give output in json format:
 
   [

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { DownloadSimpleIcon, TrashIcon, PlayIcon, ArrowsOutIcon } from '@phosphor-icons/react'
 import { MediaPreview } from '@/components/shared/MediaPreview'
+import { ConfirmModal } from '@/components/shared/ConfirmModal'
 
 interface MediaAsset {
   id: number
@@ -19,6 +20,7 @@ export const LibraryPage = () => {
   const [playingUid, setPlayingUid] = useState<string | null>(null)
   const [mediaServerPort, setMediaServerPort] = useState<number | null>(null)
   const [previewItem, setPreviewItem] = useState<MediaAsset | null>(null)
+  const [deleteItem, setDeleteItem] = useState<MediaAsset | null>(null)
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map())
 
   const loadMedia = async () => {
@@ -49,6 +51,12 @@ export const LibraryPage = () => {
     const result = await window.ipcRenderer.invoke('DELETE_MEDIA', uid)
     if (result.success) {
       setMedia((prev) => prev.filter((m) => m.uid !== uid))
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (deleteItem) {
+      await handleDelete(deleteItem.uid)
     }
   }
 
@@ -175,7 +183,7 @@ export const LibraryPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleDelete(item.uid)
+                      setDeleteItem(item)
                     }}
                     className="flex items-center justify-center w-8 h-8 bg-black/60 hover:bg-red-500 text-white rounded-lg transition-colors cursor-pointer"
                     aria-label="Delete"
@@ -204,6 +212,16 @@ export const LibraryPage = () => {
         mediaUrl={previewItem ? getVideoUrl(previewItem.filePath) : ''}
         mediaType="video"
         title={previewItem?.name}
+      />
+
+      <ConfirmModal
+        open={!!deleteItem}
+        onClose={() => setDeleteItem(null)}
+        onConfirm={confirmDelete}
+        title="Delete Video"
+        message={`Are you sure you want to delete "${deleteItem?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        confirmVariant="destructive"
       />
     </div>
   )

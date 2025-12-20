@@ -165,6 +165,11 @@ export const AIVideoPage = () => {
 
     if (response.success) {
       console.log('Video rendered successfully!')
+      if (!document.hasFocus()) {
+        new Notification('Video Render Complete', {
+          body: title ? `"${title}" has finished rendering` : 'Your video has finished rendering',
+        })
+      }
     } else {
       console.error('Failed to render video.')
     }
@@ -560,11 +565,6 @@ export const AIVideoPage = () => {
               </div>
               <div className="flex items-center justify-between mt-2 text-xs text-neutral-500">
                 <span>Frames: {renderProgress.renderedFrames} / {durationInFrames}</span>
-                <span>
-                  {renderProgress.renderEstimatedTime > 0
-                    ? `~${Math.round(renderProgress.renderEstimatedTime / 1000)}s`
-                    : '...'}
-                </span>
               </div>
             </div>
           ) : renderProgress && !isRendering && renderProgress.progress === 1 ? (
