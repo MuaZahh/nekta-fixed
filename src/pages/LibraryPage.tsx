@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
-import { DownloadSimpleIcon, TrashIcon, PlayIcon } from '@phosphor-icons/react'
+import { DownloadSimpleIcon, TrashIcon, PlayIcon, ArrowsOutIcon } from '@phosphor-icons/react'
+import { MediaPreview } from '@/components/shared/MediaPreview'
 
 interface MediaAsset {
   id: number
@@ -17,6 +18,7 @@ export const LibraryPage = () => {
   const [loading, setLoading] = useState(true)
   const [playingUid, setPlayingUid] = useState<string | null>(null)
   const [mediaServerPort, setMediaServerPort] = useState<number | null>(null)
+  const [previewItem, setPreviewItem] = useState<MediaAsset | null>(null)
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map())
 
   const loadMedia = async () => {
@@ -153,6 +155,16 @@ export const LibraryPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
+                      setPreviewItem(item)
+                    }}
+                    className="flex items-center justify-center w-8 h-8 bg-black/60 hover:bg-black/80 text-white rounded-lg transition-colors cursor-pointer"
+                    aria-label="Preview"
+                  >
+                    <ArrowsOutIcon size={16} weight="bold" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
                       handleDownload(item.uid)
                     }}
                     className="flex items-center justify-center w-8 h-8 bg-black/60 hover:bg-black/80 text-white rounded-lg transition-colors cursor-pointer"
@@ -185,6 +197,14 @@ export const LibraryPage = () => {
           ))}
         </div>
       )}
+
+      <MediaPreview
+        open={!!previewItem}
+        onClose={() => setPreviewItem(null)}
+        mediaUrl={previewItem ? getVideoUrl(previewItem.filePath) : ''}
+        mediaType="video"
+        title={previewItem?.name}
+      />
     </div>
   )
 }

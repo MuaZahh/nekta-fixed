@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { ButtonGroup, ButtonGroupSeparator } from '@/components/ui/button-group'
+import { MediaPreview } from '@/components/shared/MediaPreview'
 import {
   SparkleIcon,
   TrashIcon,
@@ -33,6 +34,7 @@ export const SlideItem = ({
   const [generating, setGenerating] = useState(false)
   const [generatingAudio, setGeneratingAudio] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const handleGenerate = async () => {
@@ -146,8 +148,11 @@ export const SlideItem = ({
         {/* Image preview */}
         <div className="flex flex-col gap-1 shrink-0">
           <Label className="text-xs text-center text-muted-foreground">Image</Label>
-          
-          <div className="w-[101px] h-[180px] bg-white rounded-lg overflow-hidden  border-neutral-200">
+
+          <div
+            className={`w-[101px] h-[180px] bg-white rounded-lg overflow-hidden border-neutral-200 ${slide.imageUrl ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+            onClick={() => slide.imageUrl && setPreviewOpen(true)}
+          >
             {slide.imageUrl ? (
               <img
                 src={slide.imageUrl}
@@ -162,6 +167,14 @@ export const SlideItem = ({
           </div>
         </div>
       </div>
+
+      <MediaPreview
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        mediaUrl={slide.imageUrl || ''}
+        mediaType="image"
+        title={`Slide ${index + 1}`}
+      />
     </div>
   )
 }
