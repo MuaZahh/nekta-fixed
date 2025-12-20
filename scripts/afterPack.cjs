@@ -82,21 +82,45 @@ exports.default = async function (context) {
     }
   }
 
-  // Pre-sign chrome-headless-shell with --deep to handle data file subcomponents
-  console.log(`\n🔏 Pre-signing chrome-headless-shell binaries...`);
+  // Sign chrome-headless-shell with --deep to handle data file subcomponents
+  // electron-builder is configured to skip this binary (signIgnore), so we sign it ourselves
+  console.log(`\n🔏 Signing chrome-headless-shell binaries with --deep...`);
 
-  const chromeHeadlessShells = findFiles(appPath, "chrome-headless-shell");
-  for (const chromeBinary of chromeHeadlessShells) {
-    // Skip if it's a directory, we only want the binary
-    if (fs.statSync(chromeBinary).isDirectory()) continue;
+  // Find the Developer ID identity from keychain
+  let signingIdentity = null;
+  try {
+    const identityOutput = execSync(
+      'security find-identity -v -p codesigning | grep "Developer ID Application" | head -1',
+      { encoding: "utf8" }
+    );
+    // Extract the hash (first 40-char hex string) from the output
+    const match = identityOutput.match(/([A-F0-9]{40})/i);
+    if (match) {
+      signingIdentity = match[1];
+      console.log(`   📋 Found signing identity: ${signingIdentity.substring(0, 8)}...`);
+    }
+  } catch (error) {
+    console.log(`   ⚠️  Could not find Developer ID identity, skipping chrome-headless-shell signing`);
+  }
 
-    try {
-      // Sign with --deep to handle all nested components
-      // Using "-" means ad-hoc signing, which electron-builder will replace with proper signature
-      execSync(`codesign --force --deep --sign - "${chromeBinary}"`, { stdio: "pipe" });
-      console.log(`   ✅ Pre-signed: ${chromeBinary}`);
-    } catch (error) {
-      console.log(`   ⚠️  Could not pre-sign: ${chromeBinary} - ${error.message}`);
+  if (signingIdentity) {
+    const chromeHeadlessShells = findFiles(appPath, "chrome-headless-shell");
+    const entitlementsPath = path.join(process.cwd(), "build/entitlements.mac.plist");
+
+    for (const chromeBinary of chromeHeadlessShells) {
+      // Skip if it's a directory, we only want the binary
+      if (fs.statSync(chromeBinary).isDirectory()) continue;
+
+      try {
+        // Sign with --deep, hardened runtime, timestamp, and entitlements
+        const cmd = `codesign --force --deep --sign "${signingIdentity}" --options runtime --timestamp --entitlements "${entitlementsPath}" "${chromeBinary}"`;
+        execSync(cmd, { stdio: "pipe" });
+        console.log(`   ✅ Signed: ${chromeBinary}`);
+      } catch (error) {
+        console.log(`   ⚠️  Could not sign: ${chromeBinary}`);
+        // Log the actual error for debugging
+        console.log(`      Error: ${error.message}`);
+      }
     }
   }
 
