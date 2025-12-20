@@ -230,7 +230,8 @@ export const AIVideoPage = () => {
     }
 
     const prompt = `${slide.imageDesc}. Style: ${artStyleDesc}`
-    const promptHash = computeHash(prompt)
+    const hashInput = `${slide.imageDesc}. Style: ${artStyleDesc}. Model: ${imageModel}`
+    const promptHash = computeHash(hashInput)
 
     if (slide.imageDescHash === promptHash && slide.imageUrl) {
       return
@@ -300,7 +301,7 @@ export const AIVideoPage = () => {
     const slidesNeedingImage = slides.filter((s) => {
       if (!s.imageDesc) return false
       if (s.isImageUploaded && s.imageUrl) return false
-      const hash = computeHash(`${s.imageDesc}. Style: ${artStyleDesc}`)
+      const hash = computeHash(`${s.imageDesc}. Style: ${artStyleDesc}. Model: ${imageModel}`)
       return s.imageDescHash !== hash || !s.imageUrl
     })
 
@@ -567,30 +568,33 @@ export const AIVideoPage = () => {
                 <span>Frames: {renderProgress.renderedFrames} / {durationInFrames}</span>
               </div>
             </div>
-          ) : renderProgress && !isRendering && renderProgress.progress === 1 ? (
+          ) : (
             <div className="w-full flex flex-col gap-2">
-              <p className="text-neutral-900 font-medium text-center text-sm">Render Complete!</p>
+              {renderProgress && !isRendering && renderProgress.progress === 1 && (
+                <>
+                  <p className="text-neutral-900 font-medium text-center text-sm">Render Complete!</p>
+                  <Button
+                    variant="default"
+                    className="border w-full"
+                    size="sm"
+                    onClick={() => setRoute('library')}
+                  >
+                    <FolderOpenIcon />
+                    Open Library
+                  </Button>
+                </>
+              )}
               <Button
                 variant="default"
                 className="border w-full"
                 size="sm"
-                onClick={() => setRoute('library')}
+                onClick={onSaveVideo}
+                disabled={!slides.length || previewGenerating || isRendering}
               >
-                <FolderOpenIcon />
-                Open Library
+                <DownloadSimpleIcon />
+                Save video
               </Button>
             </div>
-          ) : (
-            <Button
-              variant="default"
-              className="border"
-              size="sm"
-              onClick={onSaveVideo}
-              disabled={!slides.length || previewGenerating || isRendering}
-            >
-              <DownloadSimpleIcon />
-              Save video
-            </Button>
           )}
         </div>
       </div>
