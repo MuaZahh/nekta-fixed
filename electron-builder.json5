@@ -18,6 +18,10 @@
     entitlements: "build/entitlements.mac.plist",
     entitlementsInherit: "build/entitlements.mac.plist",
     notarize: true,
+    signIgnore: [
+      "vk_swiftshader_icd.json",
+      "vulkan/icd.d/vk_swiftshader_icd.json",
+    ],
   },
   win: {
     target: [
