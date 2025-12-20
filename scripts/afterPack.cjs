@@ -82,6 +82,24 @@ exports.default = async function (context) {
     }
   }
 
+  // Pre-sign chrome-headless-shell with --deep to handle data file subcomponents
+  console.log(`\n🔏 Pre-signing chrome-headless-shell binaries...`);
+
+  const chromeHeadlessShells = findFiles(appPath, "chrome-headless-shell");
+  for (const chromeBinary of chromeHeadlessShells) {
+    // Skip if it's a directory, we only want the binary
+    if (fs.statSync(chromeBinary).isDirectory()) continue;
+
+    try {
+      // Sign with --deep to handle all nested components
+      // Using "-" means ad-hoc signing, which electron-builder will replace with proper signature
+      execSync(`codesign --force --deep --sign - "${chromeBinary}"`, { stdio: "pipe" });
+      console.log(`   ✅ Pre-signed: ${chromeBinary}`);
+    } catch (error) {
+      console.log(`   ⚠️  Could not pre-sign: ${chromeBinary} - ${error.message}`);
+    }
+  }
+
   console.log(`\n🔧 Fixing FFmpeg library paths in: ${appPath}`);
 
   const ffmpegLibs = [
