@@ -82,45 +82,86 @@ exports.default = async function (context) {
     }
   }
 
-  // Sign chrome-headless-shell with --deep to handle data file subcomponents
-  // electron-builder is configured to skip this binary (signIgnore), so we sign it ourselves
-  console.log(`\n🔏 Signing chrome-headless-shell binaries with --deep...`);
+  // Sign all binaries in chrome-headless-shell directory
+  // electron-builder is configured to skip this directory (signIgnore), so we sign it ourselves
+  console.log(`\n🔏 Signing chrome-headless-shell directory...`);
 
   // Find the Developer ID identity from keychain
-  let signingIdentity = null;
+  // Try using the identity name directly - codesign will find the matching certificate
+  let signingIdentity = "Developer ID Application";
+
+  // Check if the identity exists
   try {
+    // List available keychains for debugging
+    const keychains = execSync('security list-keychains', { encoding: "utf8" });
+    console.log(`   📋 Available keychains: ${keychains.replace(/\n/g, ', ').trim()}`);
+
     const identityOutput = execSync(
-      'security find-identity -v -p codesigning | grep "Developer ID Application" | head -1',
+      'security find-identity -v -p codesigning',
       { encoding: "utf8" }
     );
-    // Extract the hash (first 40-char hex string) from the output
-    const match = identityOutput.match(/([A-F0-9]{40})/i);
-    if (match) {
-      signingIdentity = match[1];
-      console.log(`   📋 Found signing identity: ${signingIdentity.substring(0, 8)}...`);
+    const identityLines = identityOutput.split('\n').filter(l => l.includes('Developer ID') || l.includes('valid identit'));
+    console.log(`   📋 Identities: ${identityLines.join(' | ')}`);
+
+    if (!identityOutput.includes('Developer ID Application')) {
+      console.log(`   ⚠️  Developer ID Application not found in keychain`);
+      signingIdentity = null;
+    } else {
+      console.log(`   ✅ Found Developer ID Application identity`);
     }
   } catch (error) {
-    console.log(`   ⚠️  Could not find Developer ID identity, skipping chrome-headless-shell signing`);
+    console.log(`   ⚠️  Could not query keychain: ${error.message}`);
+    signingIdentity = null;
   }
 
-  if (signingIdentity) {
-    const chromeHeadlessShells = findFiles(appPath, "chrome-headless-shell");
-    const entitlementsPath = path.join(process.cwd(), "build/entitlements.mac.plist");
+  if (!signingIdentity) {
+    console.log(`   ⚠️  No Developer ID Application identity found, skipping chrome-headless-shell signing`);
+  } else {
+    // Find chrome-headless-shell directory
+    const chromeDir = path.join(
+      appPath,
+      "Contents/Resources/app.asar.unpacked/out/chrome-headless-shell"
+    );
 
-    for (const chromeBinary of chromeHeadlessShells) {
-      // Skip if it's a directory, we only want the binary
-      if (fs.statSync(chromeBinary).isDirectory()) continue;
+    if (fs.existsSync(chromeDir)) {
+      const entitlementsPath = path.join(process.cwd(), "build/entitlements.mac.plist");
 
-      try {
-        // Sign with --deep, hardened runtime, timestamp, and entitlements
-        const cmd = `codesign --force --deep --sign "${signingIdentity}" --options runtime --timestamp --entitlements "${entitlementsPath}" "${chromeBinary}"`;
-        execSync(cmd, { stdio: "pipe" });
-        console.log(`   ✅ Signed: ${chromeBinary}`);
-      } catch (error) {
-        console.log(`   ⚠️  Could not sign: ${chromeBinary}`);
-        // Log the actual error for debugging
-        console.log(`      Error: ${error.message}`);
+      // Get all files in the directory
+      const files = fs.readdirSync(chromeDir);
+
+      // Sign dylibs first (dependencies before main binary)
+      const dylibs = files.filter(f => f.endsWith('.dylib'));
+      const binaries = files.filter(f => !f.includes('.') && f !== 'chrome-headless-shell');
+      const mainBinary = files.filter(f => f === 'chrome-headless-shell');
+
+      const toSign = [...dylibs, ...binaries, ...mainBinary];
+
+      for (const file of toSign) {
+        const filePath = path.join(chromeDir, file);
+
+        // Skip directories and non-executable files
+        const stat = fs.statSync(filePath);
+        if (stat.isDirectory()) continue;
+
+        // Check if it's a Mach-O binary
+        try {
+          execSync(`file "${filePath}" | grep -q "Mach-O"`, { stdio: "pipe" });
+        } catch {
+          // Not a Mach-O binary, skip
+          continue;
+        }
+
+        try {
+          const cmd = `codesign --force --sign "${signingIdentity}" --options runtime --timestamp --entitlements "${entitlementsPath}" "${filePath}"`;
+          execSync(cmd, { stdio: "pipe" });
+          console.log(`   ✅ Signed: ${file}`);
+        } catch (error) {
+          console.log(`   ⚠️  Could not sign: ${file}`);
+          console.log(`      ${error.stderr?.toString() || error.message}`);
+        }
       }
+    } else {
+      console.log(`   ⚠️  chrome-headless-shell directory not found at: ${chromeDir}`);
     }
   }
 

@@ -19,7 +19,8 @@
     entitlementsInherit: "build/entitlements.mac.plist",
     notarize: true,
     signIgnore: [
-      "chrome-headless-shell",
+      "**/chrome-headless-shell/**",
+      "**/chrome-headless-shell",
     ],
   },
   win: {
