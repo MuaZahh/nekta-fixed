@@ -3,13 +3,31 @@ const path = require("path");
 const { execSync } = require("child_process");
 
 /**
+ * Recursively find files matching a pattern
+ */
+function findFiles(dir, filename, results = []) {
+  if (!fs.existsSync(dir)) return results;
+
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      findFiles(fullPath, filename, results);
+    } else if (entry.name === filename) {
+      results.push(fullPath);
+    }
+  }
+  return results;
+}
+
+/**
  * electron-builder afterPack hook
- * Fixes FFmpeg library paths for macOS notarization
+ * Fixes FFmpeg library paths and removes unsigned files for macOS notarization
  */
 exports.default = async function (context) {
   // Only run on macOS
   if (process.platform !== "darwin") {
-    console.log("⏭️  Skipping FFmpeg path fix (not macOS)");
+    console.log("⏭️  Skipping afterPack fixes (not macOS)");
     return;
   }
 
@@ -17,6 +35,52 @@ exports.default = async function (context) {
     context.appOutDir,
     `${context.packager.appInfo.productFilename}.app`
   );
+
+  // Remove problematic JSON files that can't be signed
+  console.log(`\n🧹 Removing unsigned files from: ${appPath}`);
+
+  const problematicFiles = [
+    "vk_swiftshader_icd.json",
+  ];
+
+  for (const filename of problematicFiles) {
+    const files = findFiles(appPath, filename);
+    for (const file of files) {
+      try {
+        fs.unlinkSync(file);
+        console.log(`   ✅ Removed: ${file}`);
+      } catch (error) {
+        console.log(`   ⚠️  Could not remove: ${file} - ${error.message}`);
+      }
+    }
+  }
+
+  // Also remove vulkan directory if present (contains the same problematic file)
+  const vulkanDirs = [];
+  function findVulkanDirs(dir) {
+    if (!fs.existsSync(dir)) return;
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "vulkan") {
+          vulkanDirs.push(fullPath);
+        } else {
+          findVulkanDirs(fullPath);
+        }
+      }
+    }
+  }
+  findVulkanDirs(appPath);
+
+  for (const vulkanDir of vulkanDirs) {
+    try {
+      fs.rmSync(vulkanDir, { recursive: true, force: true });
+      console.log(`   ✅ Removed vulkan directory: ${vulkanDir}`);
+    } catch (error) {
+      console.log(`   ⚠️  Could not remove: ${vulkanDir} - ${error.message}`);
+    }
+  }
 
   console.log(`\n🔧 Fixing FFmpeg library paths in: ${appPath}`);
 
