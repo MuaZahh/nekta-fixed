@@ -12,9 +12,10 @@ import { WordTimestamp } from "@/remotion/templates/ai-video-basic/types";
 interface SubtitleProps {
   text: string;
   wordTimestamps?: WordTimestamp[];
+  primaryColor?: string;
 }
 
-const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps }) => {
+const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor = "yellow" }) => {
   const frame = useCurrentFrame();
   const { fps, width } = useVideoConfig();
   const { fontFamily } = loadFont();
@@ -126,7 +127,7 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps }) => {
             <span
               key={index}
               style={{
-                color: index === activeWordIndex ? "yellow" : "white",
+                color: index === activeWordIndex ? primaryColor : "white",
                 WebkitTextStroke: "20px black",
               }}
             >
@@ -163,7 +164,7 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps }) => {
             <span
               key={index}
               style={{
-                color: index === activeWordIndex ? "yellow" : "white",
+                color: index === activeWordIndex ? primaryColor : "white",
               }}
             >
               {wt.word}

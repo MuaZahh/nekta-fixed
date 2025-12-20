@@ -39,6 +39,7 @@ import { Timeline } from '@/remotion/templates/ai-video-basic/types'
 import { FPS, INTRO_DURATION } from '@/remotion/constants'
 import { ReplicateImageGenProvider } from '@/lib/providers/replicate'
 import { GenerateStoryModal } from './ai-video/GenerateStoryModal'
+import Chrome from '@uiw/react-color-chrome'
 
 
 const supportedRatios: AspectRatio[] = ['9:16']
@@ -103,6 +104,8 @@ export const AIVideoPage = () => {
   )
   const [artStyle, setArtStyle] = useState<string>(DEFAULT_ART_STYLE)
   const [artStyleDesc, setArtStyleDesc] = useState<string>(DEFAULT_ART_STYLE_DESC)
+  const [primaryColor, setPrimaryColor] = useState<string>('#ffff00')
+  const [colorPickerOpen, setColorPickerOpen] = useState(false)
   const [title, setTitle] = useState('')
 
   const [isPreviewGenerated, setIsPreviewGenerated] = useState(false)
@@ -338,7 +341,7 @@ export const AIVideoPage = () => {
     let generatedTimeline: Timeline | null = null
     flushSync(() => {
       setSlides((currentSlides) => {
-        generatedTimeline = createTimelineFromSlides(currentSlides, title)
+        generatedTimeline = createTimelineFromSlides(currentSlides, title, primaryColor)
         setTimeline(generatedTimeline)
         return currentSlides
       })
@@ -408,23 +411,51 @@ export const AIVideoPage = () => {
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <Label>Image Model</Label>
-              <Select value={imageModel} onValueChange={setImageModel}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Replicate</SelectLabel>
-                    {filteredModels.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name} (${(m.price / 100).toFixed(3)})
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label>Image Model</Label>
+                <Select value={imageModel} onValueChange={setImageModel}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Replicate</SelectLabel>
+                      {filteredModels.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name} (${(m.price / 100).toFixed(3)})
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>Primary Color</Label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setColorPickerOpen(!colorPickerOpen)}
+                    className="w-full h-9 rounded-md border border-input cursor-pointer hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: primaryColor }}
+                  />
+                  {colorPickerOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setColorPickerOpen(false)}
+                      />
+                      <div className="absolute top-11 left-0 z-50">
+                        <Chrome
+                          color={primaryColor}
+                          onChange={(color) => setPrimaryColor(color.hex)}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex flex-col gap-2">

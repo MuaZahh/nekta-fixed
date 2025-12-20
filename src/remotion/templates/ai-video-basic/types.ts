@@ -51,6 +51,7 @@ const TimelineSchema = z.object({
   elements: z.array(BackgroundElementSchema),
   text: z.array(TextElementSchema),
   audio: z.array(AudioElementSchema),
+  primaryColor: z.string().optional(),
 });
 
 export type BackgroundTransitionType = z.infer<

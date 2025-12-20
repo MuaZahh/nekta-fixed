@@ -125,13 +125,15 @@ const getTextAnimations = (): ElementAnimation[] => {
 
 export const createTimelineFromSlides = (
   slides: AiVideoSlideType[],
-  title: string
+  title: string,
+  primaryColor?: string
 ): Timeline => {
   const timeline: Timeline = {
     elements: [],
     text: [],
     audio: [],
     shortTitle: title,
+    primaryColor,
   }
 
   let durationMs = 0

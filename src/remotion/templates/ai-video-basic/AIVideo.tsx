@@ -49,7 +49,7 @@ export const AIVideo: React.FC<z.infer<typeof aiVideoSchema>> = ({
               color: "black",
               fontFamily,
               textTransform: "uppercase",
-              backgroundColor: "yellow",
+              backgroundColor: timeline.primaryColor || "yellow",
               paddingTop: 20,
               paddingBottom: 20,
               border: "10px solid black",
@@ -99,6 +99,7 @@ export const AIVideo: React.FC<z.infer<typeof aiVideoSchema>> = ({
               key={index}
               text={element.text}
               wordTimestamps={element.wordTimestamps}
+              primaryColor={timeline.primaryColor}
             />
           </Sequence>
         );
