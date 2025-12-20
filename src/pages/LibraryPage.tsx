@@ -16,18 +16,28 @@ export const LibraryPage = () => {
   const [media, setMedia] = useState<MediaAsset[]>([])
   const [loading, setLoading] = useState(true)
   const [playingUid, setPlayingUid] = useState<string | null>(null)
+  const [mediaServerPort, setMediaServerPort] = useState<number | null>(null)
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map())
 
   const loadMedia = async () => {
     setLoading(true)
-    const result = await window.ipcRenderer.invoke('GET_LIBRARY_MEDIA')
+    const [result, port] = await Promise.all([
+      window.ipcRenderer.invoke('GET_LIBRARY_MEDIA'),
+      window.ipcRenderer.invoke('GET_MEDIA_SERVER_PORT'),
+    ])
     setMedia(result)
+    setMediaServerPort(port)
     setLoading(false)
   }
 
   useEffect(() => {
     loadMedia()
   }, [])
+
+  const getVideoUrl = (filePath: string) => {
+    if (!mediaServerPort) return ''
+    return `http://127.0.0.1:${mediaServerPort}/?path=${encodeURIComponent(filePath)}`
+  }
 
   const handleDownload = async (uid: string) => {
     await window.ipcRenderer.invoke('DOWNLOAD_MEDIA', uid)
@@ -40,7 +50,7 @@ export const LibraryPage = () => {
     }
   }
 
-  const handlePlayToggle = (uid: string) => {
+  const handlePlayToggle = async (uid: string) => {
     const video = videoRefs.current.get(uid)
     if (!video) return
 
@@ -52,14 +62,20 @@ export const LibraryPage = () => {
         const currentVideo = videoRefs.current.get(playingUid)
         currentVideo?.pause()
       }
-      video.play()
-      setPlayingUid(uid)
+      try {
+        await video.play()
+        setPlayingUid(uid)
+      } catch (err) {
+        console.error('Failed to play video:', err)
+      }
     }
   }
 
-  const setVideoRef = (uid: string) => (el: HTMLVideoElement | null) => {
+  const setVideoRef = (uid: string, el: HTMLVideoElement | null) => {
     if (el) {
       videoRefs.current.set(uid, el)
+    } else {
+      videoRefs.current.delete(uid)
     }
   }
 
@@ -118,10 +134,11 @@ export const LibraryPage = () => {
                 onClick={() => handlePlayToggle(item.uid)}
               >
                 <video
-                  ref={setVideoRef(item.uid)}
-                  src={`media://${encodeURIComponent(item.filePath)}`}
+                  ref={(el) => setVideoRef(item.uid, el)}
+                  src={getVideoUrl(item.filePath)}
                   className="absolute inset-0 w-full h-full object-cover block"
                   onEnded={() => setPlayingUid(null)}
+                  preload="metadata"
                   playsInline
                 />
                 {playingUid !== item.uid && (

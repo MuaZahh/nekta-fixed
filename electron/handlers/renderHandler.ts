@@ -72,10 +72,35 @@ function startPreviewMediaServer(): Promise<number> {
 
       const contentType = mimeTypes[ext] || "application/octet-stream";
       const stat = fs.statSync(decodedPath);
+      const fileSize = stat.size;
 
+      // Handle Range requests for video seeking
+      const range = req.headers.range;
+      if (range) {
+        const match = range.match(/bytes=(\d+)-(\d*)/);
+        if (match) {
+          const start = parseInt(match[1], 10);
+          const end = match[2] ? parseInt(match[2], 10) : fileSize - 1;
+          const chunkSize = end - start + 1;
+
+          res.writeHead(206, {
+            "Content-Type": contentType,
+            "Content-Length": chunkSize,
+            "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+            "Accept-Ranges": "bytes",
+            "Access-Control-Allow-Origin": "*",
+          });
+
+          fs.createReadStream(decodedPath, { start, end }).pipe(res);
+          return;
+        }
+      }
+
+      // Full file response
       res.writeHead(200, {
         "Content-Type": contentType,
-        "Content-Length": stat.size,
+        "Content-Length": fileSize,
+        "Accept-Ranges": "bytes",
         "Access-Control-Allow-Origin": "*",
       });
 
@@ -97,6 +122,17 @@ function startPreviewMediaServer(): Promise<number> {
     server.on("error", reject);
   });
 }
+
+// Start server immediately on module load
+startPreviewMediaServer().catch((err) => {
+  log.error("Failed to start preview media server:", err);
+});
+
+// IPC handler to get the media server port
+ipcMain.handle("GET_MEDIA_SERVER_PORT", async () => {
+  const port = await startPreviewMediaServer();
+  return port;
+});
 
 // Transform media:// URL to http:// URL
 function transformMediaUrl(mediaUrl: string, port: number): string {

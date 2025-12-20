@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, Menu, protocol } from "electron";
+import { app, BrowserWindow, ipcMain, shell, Menu, protocol, net } from "electron";
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import os from "node:os";
@@ -172,8 +172,12 @@ app.whenReady().then(() => {
     const filePath = decodeURIComponent(request.url.replace("media://", ""));
 
     try {
+      if (!fs.existsSync(filePath)) {
+        return new Response('File not found', { status: 404 });
+      }
+
       const stat = fs.statSync(filePath);
-      const fileBuffer = fs.readFileSync(filePath);
+      const fileSize = stat.size;
 
       // Determine content type based on extension
       const ext = path.extname(filePath).toLowerCase();
@@ -191,11 +195,44 @@ app.whenReady().then(() => {
       };
       const contentType = mimeTypes[ext] || 'application/octet-stream';
 
-      return new Response(fileBuffer, {
+      // Use net.fetch to get the file and handle ranges properly
+      const fileUrl = `file://${filePath}`;
+
+      const rangeHeader = request.headers.get('Range');
+      if (rangeHeader) {
+        const match = rangeHeader.match(/bytes=(\d+)-(\d*)/);
+        if (match) {
+          const start = parseInt(match[1], 10);
+          const end = match[2] ? parseInt(match[2], 10) : fileSize - 1;
+          const chunkSize = end - start + 1;
+
+          // Read the specific range using a file handle
+          const fileHandle = await fs.promises.open(filePath, 'r');
+          const uint8Array = new Uint8Array(chunkSize);
+          await fileHandle.read(uint8Array, 0, chunkSize, start);
+          await fileHandle.close();
+
+          return new Response(uint8Array, {
+            status: 206,
+            headers: {
+              'Content-Type': contentType,
+              'Content-Length': chunkSize.toString(),
+              'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+              'Accept-Ranges': 'bytes',
+            },
+          });
+        }
+      }
+
+      // Full file response - use net.fetch for file:// URL
+      const fileResponse = await net.fetch(fileUrl);
+
+      return new Response(fileResponse.body, {
         status: 200,
         headers: {
           'Content-Type': contentType,
-          'Content-Length': stat.size.toString(),
+          'Content-Length': fileSize.toString(),
+          'Accept-Ranges': 'bytes',
         },
       });
     } catch (error) {
