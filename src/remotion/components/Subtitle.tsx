@@ -6,7 +6,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { fitText } from "@remotion/layout-utils";
-import { loadFont } from "@remotion/google-fonts/BreeSerif";
+import { loadFont } from "@remotion/google-fonts/Figtree";
 import { WordTimestamp } from "@/remotion/templates/ai-video-basic/types";
 
 interface SubtitleProps {
@@ -41,6 +41,7 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
     fontFamily,
     text,
     withinWidth: width * 0.8,
+    fontWeight: 700
   });
 
   const fontSize = Math.min(desiredFontSize, fittedText.fontSize);
@@ -65,6 +66,7 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
               fontFamily,
               textTransform: "uppercase",
               textAlign: "center",
+              fontWeight: 700,
               transform: `scale(${0.8 + 0.2 * enter}) translateY(${50 * (1 - enter)}px)`,
             }}
           >
@@ -85,6 +87,7 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
               fontSize,
               color: "white",
               fontFamily,
+              fontWeight: 700,
               textTransform: "uppercase",
               textAlign: "center",
               transform: `scale(${0.8 + 0.2 * enter}) translateY(${50 * (1 - enter)}px)`,
@@ -114,6 +117,7 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
           style={{
             fontSize,
             fontFamily,
+            fontWeight: 700,
             textTransform: "uppercase",
             textAlign: "center",
             transform: `scale(${0.8 + 0.2 * enter}) translateY(${50 * (1 - enter)}px)`,
@@ -151,6 +155,7 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
           style={{
             fontSize,
             fontFamily,
+            fontWeight: 700,
             textTransform: "uppercase",
             textAlign: "center",
             transform: `scale(${0.8 + 0.2 * enter}) translateY(${50 * (1 - enter)}px)`,
