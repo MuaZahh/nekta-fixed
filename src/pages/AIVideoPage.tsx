@@ -199,6 +199,12 @@ export const AIVideoPage = () => {
     )
   }
 
+  const onImageUpload = (uid: string, imageUrl: string) => {
+    setSlides((prev) =>
+      prev.map((s) => (s.uid === uid ? { ...s, imageUrl, imageDescHash: undefined, isImageUploaded: true } : s))
+    )
+  }
+
   const computeHash = (text: string): string => {
     let hash = 0
     for (let i = 0; i < text.length; i++) {
@@ -239,7 +245,7 @@ export const AIVideoPage = () => {
     }
 
     setSlides((prev) =>
-      prev.map((s) => (s.uid === uid ? { ...s, imageUrl: saveResult.mediaUrl, imageDescHash: promptHash } : s))
+      prev.map((s) => (s.uid === uid ? { ...s, imageUrl: saveResult.mediaUrl, imageDescHash: promptHash, isImageUploaded: false } : s))
     )
   }
 
@@ -288,6 +294,7 @@ export const AIVideoPage = () => {
 
     const slidesNeedingImage = slides.filter((s) => {
       if (!s.imageDesc) return false
+      if (s.isImageUploaded && s.imageUrl) return false
       const hash = computeHash(`${s.imageDesc}. Style: ${artStyleDesc}`)
       return s.imageDescHash !== hash || !s.imageUrl
     })
@@ -456,6 +463,7 @@ export const AIVideoPage = () => {
                 onImageDescChange={onImageDescChange}
                 onGenerateImage={onGenerateImage}
                 onGenerateAudio={onGenerateAudio}
+                onImageUpload={onImageUpload}
               />
             ))}
           </div>

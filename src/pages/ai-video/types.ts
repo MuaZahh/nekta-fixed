@@ -14,6 +14,7 @@ export type AiVideoSlideType = {
   imageDescHash?: string
   audioData?: SlideTTS
   textHash?: string
+  isImageUploaded?: boolean
 }
 
 export type WizardStep = 'create-titles' | 'select-title'

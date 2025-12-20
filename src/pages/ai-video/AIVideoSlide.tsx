@@ -12,6 +12,8 @@ import {
   SpeakerHighIcon,
   StopIcon,
   CircleNotchIcon,
+  UploadSimpleIcon,
+  ArrowsOutIcon,
 } from '@phosphor-icons/react'
 
 export const SlideItem = ({
@@ -22,6 +24,7 @@ export const SlideItem = ({
   onImageDescChange,
   onGenerateImage,
   onGenerateAudio,
+  onImageUpload,
 }: {
   slide: AiVideoSlideType
   index: number
@@ -30,12 +33,37 @@ export const SlideItem = ({
   onImageDescChange: (uid: string, val: string) => void
   onGenerateImage: (uid: string) => Promise<void>
   onGenerateAudio: (uid: string) => Promise<{ audioUrl: string; isNew: boolean } | null>
+  onImageUpload: (uid: string, imageUrl: string) => void
 }) => {
   const [generating, setGenerating] = useState(false)
   const [generatingAudio, setGeneratingAudio] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const base64Data = (reader.result as string).split(',')[1]
+      const result = await window.ipcRenderer.invoke('SAVE_GENERATED_IMAGE', {
+        base64Data,
+        filename: `slide_${slide.uid}_${Date.now()}.png`,
+      })
+
+      if (result.ok) {
+        onImageUpload(slide.uid, result.mediaUrl)
+      }
+    }
+    reader.readAsDataURL(file)
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   const handleGenerate = async () => {
     setGenerating(true)
@@ -149,22 +177,53 @@ export const SlideItem = ({
         <div className="flex flex-col gap-1 shrink-0">
           <Label className="text-xs text-center text-muted-foreground">Image</Label>
 
-          <div
-            className={`w-[101px] h-[180px] bg-white rounded-lg overflow-hidden border-neutral-200 ${slide.imageUrl ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
-            onClick={() => slide.imageUrl && setPreviewOpen(true)}
-          >
+          <div className="relative w-[101px] h-[180px] bg-white rounded-lg overflow-hidden border-neutral-200 group">
             {slide.imageUrl ? (
-              <img
-                src={slide.imageUrl}
-                className="w-full h-full object-cover"
-                alt="Generated"
-              />
+              <>
+                <img
+                  src={slide.imageUrl}
+                  className="w-full h-full object-cover"
+                  alt="Generated"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center justify-center w-8 h-8 bg-white/90 hover:bg-white text-neutral-700 rounded-lg transition-colors cursor-pointer"
+                    aria-label="Upload image"
+                  >
+                    <UploadSimpleIcon size={16} weight="bold" />
+                  </button>
+                  <button
+                    onClick={() => setPreviewOpen(true)}
+                    className="flex items-center justify-center w-8 h-8 bg-white/90 hover:bg-white text-neutral-700 rounded-lg transition-colors cursor-pointer"
+                    aria-label="Preview image"
+                  >
+                    <ArrowsOutIcon size={16} weight="bold" />
+                  </button>
+                </div>
+              </>
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <ImageIcon size={24} className="text-neutral-300" />
-              </div>
+              <>
+                <div className="w-full h-full flex items-center justify-center">
+                  <ImageIcon size={24} className="text-neutral-300 group-hover:hidden" />
+                </div>
+                <div
+                  className="absolute inset-0 bg-neutral-100 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <UploadSimpleIcon size={24} className="text-neutral-500" />
+                </div>
+              </>
             )}
           </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
         </div>
       </div>
 
