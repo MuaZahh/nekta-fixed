@@ -21,8 +21,8 @@
     signIgnore: [
       "out/chrome-headless-shell",
     ],
-    afterSign: "./scripts/afterSign.cjs",
   },
+  afterSign: "./scripts/afterSign.cjs",
   win: {
     target: [
       {
