@@ -19,9 +19,9 @@
     entitlementsInherit: "build/entitlements.mac.plist",
     notarize: true,
     signIgnore: [
-      "**/chrome-headless-shell/**",
-      "**/chrome-headless-shell",
+      "out/chrome-headless-shell",
     ],
+    afterSign: "./scripts/afterSign.cjs",
   },
   win: {
     target: [
