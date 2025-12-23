@@ -82,59 +82,6 @@ exports.default = async function (context) {
     }
   }
 
-  // Pre-sign ALL files in chrome-headless-shell with ad-hoc signatures
-  // This ensures electron-builder can re-sign them properly (fixes subcomponent errors)
-  const chromeHeadlessShellDir = path.join(
-    appPath,
-    "Contents/Resources/app.asar.unpacked/out/chrome-headless-shell"
-  );
-
-  if (fs.existsSync(chromeHeadlessShellDir)) {
-    console.log(`\n🔏 Pre-signing chrome-headless-shell files (ad-hoc)...`);
-
-    const allFiles = [];
-
-    function collectFiles(dir) {
-      const entries = fs.readdirSync(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          collectFiles(fullPath);
-        } else {
-          allFiles.push(fullPath);
-        }
-      }
-    }
-
-    collectFiles(chromeHeadlessShellDir);
-
-    // Sort: sign .dylib first, then other files, then executables (no extension)
-    allFiles.sort((a, b) => {
-      const extA = path.extname(a);
-      const extB = path.extname(b);
-      if (extA === ".dylib" && extB !== ".dylib") return -1;
-      if (extA !== ".dylib" && extB === ".dylib") return 1;
-      if (extA === "" && extB !== "") return 1;
-      if (extA !== "" && extB === "") return -1;
-      return 0;
-    });
-
-    for (const file of allFiles) {
-      try {
-        // Remove existing signature first
-        try {
-          execSync(`codesign --remove-signature "${file}"`, { stdio: "pipe" });
-        } catch (e) {}
-
-        // Sign with ad-hoc signature
-        execSync(`codesign --sign - --force "${file}"`, { stdio: "pipe" });
-        console.log(`   ✅ Pre-signed: ${path.basename(file)}`);
-      } catch (error) {
-        console.log(`   ⚠️  Could not sign ${path.basename(file)}: ${error.message}`);
-      }
-    }
-  }
-
   console.log(`\n🔧 Fixing FFmpeg library paths in: ${appPath}`);
 
   const ffmpegLibs = [

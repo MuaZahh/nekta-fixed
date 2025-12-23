@@ -10,6 +10,7 @@
   },
   files: ["dist-electron", "dist", "out"],
   afterPack: "./scripts/afterPack.cjs",
+  afterSign: "./scripts/afterSign.cjs",
   mac: {
     artifactName: "${productName}_${version}.${ext}",
     target: ["dmg", "zip"],
@@ -18,6 +19,7 @@
     entitlements: "build/entitlements.mac.plist",
     entitlementsInherit: "build/entitlements.mac.plist",
     notarize: true,
+    signIgnore: ["out/chrome-headless-shell"],
   },
   win: {
     target: [
