@@ -82,59 +82,55 @@ exports.default = async function (context) {
     }
   }
 
-  // Sign chrome-headless-shell binaries with ad-hoc signatures
-  // This fixes signing order issues - dylibs must be signed before executables
-  // electron-builder will re-sign them with the proper identity
+  // Pre-sign ALL files in chrome-headless-shell with ad-hoc signatures
+  // This ensures electron-builder can re-sign them properly (fixes subcomponent errors)
   const chromeHeadlessShellDir = path.join(
     appPath,
     "Contents/Resources/app.asar.unpacked/out/chrome-headless-shell"
   );
 
   if (fs.existsSync(chromeHeadlessShellDir)) {
-    console.log(`\n🔏 Pre-signing chrome-headless-shell binaries (ad-hoc)...`);
+    console.log(`\n🔏 Pre-signing chrome-headless-shell files (ad-hoc)...`);
 
-    const dylibs = [];
-    const executables = [];
+    const allFiles = [];
 
-    function findBinaries(dir) {
+    function collectFiles(dir) {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
-          findBinaries(fullPath);
+          collectFiles(fullPath);
         } else {
-          const ext = path.extname(entry.name);
-          if (ext === ".dylib" || ext === ".so") {
-            dylibs.push(fullPath);
-          } else if (ext === "" && !entry.name.includes(".")) {
-            try {
-              const stats = fs.statSync(fullPath);
-              if (stats.mode & fs.constants.S_IXUSR) {
-                executables.push(fullPath);
-              }
-            } catch (e) {}
-          }
+          allFiles.push(fullPath);
         }
       }
     }
 
-    findBinaries(chromeHeadlessShellDir);
+    collectFiles(chromeHeadlessShellDir);
 
-    // Sign dylibs first, then executables (order matters!)
-    const allBinaries = [...dylibs, ...executables];
+    // Sort: sign .dylib first, then other files, then executables (no extension)
+    allFiles.sort((a, b) => {
+      const extA = path.extname(a);
+      const extB = path.extname(b);
+      if (extA === ".dylib" && extB !== ".dylib") return -1;
+      if (extA !== ".dylib" && extB === ".dylib") return 1;
+      if (extA === "" && extB !== "") return 1;
+      if (extA !== "" && extB === "") return -1;
+      return 0;
+    });
 
-    for (const binary of allBinaries) {
+    for (const file of allFiles) {
       try {
         // Remove existing signature first
         try {
-          execSync(`codesign --remove-signature "${binary}"`, { stdio: "pipe" });
+          execSync(`codesign --remove-signature "${file}"`, { stdio: "pipe" });
         } catch (e) {}
 
-        // Sign with ad-hoc signature (-)
-        execSync(`codesign --sign - --force --timestamp=none "${binary}"`, { stdio: "pipe" });
-        console.log(`   ✅ Pre-signed: ${path.basename(binary)}`);
+        // Sign with ad-hoc signature
+        execSync(`codesign --sign - --force "${file}"`, { stdio: "pipe" });
+        console.log(`   ✅ Pre-signed: ${path.basename(file)}`);
       } catch (error) {
-        console.log(`   ⚠️  Failed to pre-sign ${path.basename(binary)}: ${error.message}`);
+        console.log(`   ⚠️  Could not sign ${path.basename(file)}: ${error.message}`);
       }
     }
   }
