@@ -82,18 +82,64 @@ exports.default = async function (context) {
     }
   }
 
-  // Remove chrome-headless-shell directory entirely to avoid signing issues
-  // Remotion will download it at runtime if needed
+  // Sign chrome-headless-shell binaries for notarization
+  // These need to be signed with hardened runtime and timestamp before electron-builder's main signing
   const chromeHeadlessShellDir = path.join(
     appPath,
     "Contents/Resources/app.asar.unpacked/out/chrome-headless-shell"
   );
+
   if (fs.existsSync(chromeHeadlessShellDir)) {
-    try {
-      fs.rmSync(chromeHeadlessShellDir, { recursive: true, force: true });
-      console.log(`   ✅ Removed chrome-headless-shell directory`);
-    } catch (error) {
-      console.log(`   ⚠️  Could not remove chrome-headless-shell: ${error.message}`);
+    console.log(`\n🔏 Signing chrome-headless-shell binaries...`);
+
+    const entitlements = path.join(process.cwd(), "build/entitlements.mac.plist");
+    const identity = process.env.CSC_NAME || "Developer ID Application";
+
+    // Find all binaries that need signing
+    const binariesToSign = [];
+
+    function findBinaries(dir) {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          findBinaries(fullPath);
+        } else {
+          const ext = path.extname(entry.name);
+          // Sign .dylib files and executables (no extension, executable bit)
+          if (ext === ".dylib" || ext === ".so") {
+            binariesToSign.push(fullPath);
+          } else if (ext === "" && !entry.name.includes(".")) {
+            // Check if it's an executable
+            try {
+              const stats = fs.statSync(fullPath);
+              if (stats.mode & fs.constants.S_IXUSR) {
+                binariesToSign.push(fullPath);
+              }
+            } catch (e) {}
+          }
+        }
+      }
+    }
+
+    findBinaries(chromeHeadlessShellDir);
+
+    for (const binary of binariesToSign) {
+      try {
+        // First, remove any existing signature
+        try {
+          execSync(`codesign --remove-signature "${binary}"`, { stdio: "pipe" });
+        } catch (e) {
+          // May not have a signature to remove
+        }
+
+        // Sign with hardened runtime and timestamp
+        const signCmd = `codesign --sign "${identity}" --force --timestamp --options runtime --entitlements "${entitlements}" "${binary}"`;
+        execSync(signCmd, { stdio: "pipe" });
+        console.log(`   ✅ Signed: ${path.basename(binary)}`);
+      } catch (error) {
+        console.log(`   ⚠️  Failed to sign ${path.basename(binary)}: ${error.message}`);
+      }
     }
   }
 
