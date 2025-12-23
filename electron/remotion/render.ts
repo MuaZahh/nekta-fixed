@@ -2,14 +2,18 @@ import {
   renderMedia,
   RenderMediaOnProgress,
   selectComposition,
+  ensureBrowser,
 } from "@remotion/renderer";
-import { app } from "electron";
+import { app, BrowserWindow } from "electron";
 import log from "electron-log/main";
 import fs from "fs";
 import path from "path";
 import http from "http";
 import { eq } from "drizzle-orm";
 import { getDb, generateUid, schema } from "../libs/db";
+
+// Cache the browser executable path once downloaded
+let cachedBrowserExecutable: string | null = null;
 
 /**
  * Creates a simple HTTP server to serve local media files during rendering
@@ -114,44 +118,81 @@ function transformMediaUrls(
 
 let warned = false;
 
+export type BrowserDownloadProgress = {
+  percent: number;
+  downloadedBytes: number;
+  totalBytes: number;
+};
+
 /**
- * Get the path to the bundled Chrome Headless Shell executable.
- * In packaged apps, we use the Chrome Headless Shell that was bundled during build.
- * In development, Remotion will use its downloaded version from node_modules.
+ * Ensures Chrome Headless Shell is available, downloading if necessary.
+ * Sends download progress to all renderer windows.
  */
-function getBrowserExecutable(): string | null {
-  if (!app.isPackaged) {
-    // In development, let Remotion use its own downloaded browser
-    return null;
+export async function ensureBrowserWithProgress(): Promise<string> {
+  // Return cached path if already downloaded
+  if (cachedBrowserExecutable && fs.existsSync(cachedBrowserExecutable)) {
+    log.info(`Using cached browser executable: ${cachedBrowserExecutable}`);
+    return cachedBrowserExecutable;
   }
 
-  const appPath = app.getAppPath().replace("app.asar", "app.asar.unpacked");
-  let executableName: string;
+  log.info("Ensuring Chrome Headless Shell is available...");
 
-  switch (process.platform) {
-    case "darwin":
-      executableName = "chrome-headless-shell";
-      break;
-    case "win32":
-      executableName = "chrome-headless-shell.exe";
-      break;
-    case "linux":
-      executableName = "chrome-headless-shell";
-      break;
-    default:
-      log.error(`Unsupported platform: ${process.platform}`);
-      return null;
-  }
+  // Send initial status to all windows
+  const windows = BrowserWindow.getAllWindows();
+  windows.forEach((win) => {
+    win.webContents.send("BROWSER_DOWNLOAD_START");
+  });
 
-  const browserPath = path.join(appPath, "out/chrome-headless-shell", executableName);
+  try {
+    const result = await ensureBrowser({
+      onBrowserDownload: () => {
+        log.info("Starting Chrome Headless Shell download...");
+        return {
+          onProgress: (progress) => {
+            // Send progress to all renderer windows
+            const windows = BrowserWindow.getAllWindows();
+            windows.forEach((win) => {
+              win.webContents.send("BROWSER_DOWNLOAD_PROGRESS", {
+                percent: progress.percent,
+                downloadedBytes: progress.downloadedBytes,
+                totalBytes: progress.totalSizeInBytes,
+              });
+            });
+          },
+          version: null,
+        };
+      },
+    });
 
-  if (fs.existsSync(browserPath)) {
-    log.info(`Found bundled Chrome Headless Shell at: ${browserPath}`);
+    // Handle different result types from ensureBrowser
+    let browserPath: string;
+    if ("path" in result) {
+      browserPath = result.path;
+    } else {
+      throw new Error("Browser not available and could not be downloaded");
+    }
+
+    cachedBrowserExecutable = browserPath;
+    log.info(`Chrome Headless Shell ready at: ${browserPath}`);
+
+    // Send completion to all windows
+    windows.forEach((win) => {
+      win.webContents.send("BROWSER_DOWNLOAD_COMPLETE");
+    });
+
     return browserPath;
-  }
+  } catch (error) {
+    log.error("Failed to ensure browser:", error);
 
-  log.error(`Bundled Chrome Headless Shell not found at: ${browserPath}`);
-  return null;
+    // Send error to all windows
+    windows.forEach((win) => {
+      win.webContents.send("BROWSER_DOWNLOAD_ERROR", {
+        message: error instanceof Error ? error.message : String(error),
+      });
+    });
+
+    throw error;
+  }
 }
 
 /**
@@ -312,15 +353,9 @@ export default async function render(
       }
     }
 
-    // Get browser executable (bundled Chrome Headless Shell for packaged apps)
-    const browserExecutable = getBrowserExecutable();
+    // Get browser executable (downloads at runtime if needed)
+    const browserExecutable = await ensureBrowserWithProgress();
     log.info(`Browser executable: ${browserExecutable}`);
-
-    if (app.isPackaged && !browserExecutable) {
-      throw new Error(
-        "Chrome Headless Shell not found. The app may not have been built correctly."
-      );
-    }
 
     // Configure chromium options
     const chromiumOptions = {

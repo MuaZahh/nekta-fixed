@@ -1,7 +1,5 @@
 import { bundle } from "@remotion/bundler";
-import { ensureBrowser } from "@remotion/renderer";
 import path from "path";
-import fs from "fs";
 // import { enableTailwind } from "@remotion/tailwind";
 
 // https://github.com/TuanManhCao/electron-remotion
@@ -33,40 +31,9 @@ async function bundleRemotion() {
     });
     console.log("Bundle location:", bundleLocation);
 
-    // Download Chrome Headless Shell for packaging with the app
-    console.log("Ensuring Chrome Headless Shell is downloaded...");
-    const browserResult = await ensureBrowser({
-      onBrowserDownload: () => {
-        console.log("Downloading Chrome Headless Shell...");
-        return {
-          onProgress: (progress) => {
-            // progress contains { percent, downloadedBytes, totalBytes }
-            if (progress.percent) {
-              process.stdout.write(`\rDownload progress: ${Math.round(progress.percent * 100)}%`);
-            }
-          },
-          version: null,
-        };
-      },
-    });
-    console.log("\nChrome Headless Shell download complete.");
-    console.log("Chrome Headless Shell location:", browserResult);
-
-    // ensureBrowser returns { path: string, type: string }
-    const browserExecutable = browserResult.path;
-
-    // Copy Chrome Headless Shell to out directory for packaging
-    const chromeSource = path.dirname(browserExecutable);
-    const chromeDest = path.resolve("out/chrome-headless-shell");
-
-    // Remove existing chrome directory if it exists
-    if (fs.existsSync(chromeDest)) {
-      fs.rmSync(chromeDest, { recursive: true });
-    }
-
-    // Copy the chrome directory
-    fs.cpSync(chromeSource, chromeDest, { recursive: true });
-    console.log("Chrome Headless Shell copied to:", chromeDest);
+    // Note: Chrome Headless Shell is downloaded at runtime via ensureBrowser()
+    // This avoids macOS code signing issues with bundled Chromium binaries
+    console.log("Chrome Headless Shell will be downloaded at runtime on first use.");
 
   } catch (err) {
     console.error("Failed to bundle Remotion:", err);

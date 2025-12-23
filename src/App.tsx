@@ -2,6 +2,7 @@ import "./App.css";
 
 import { LoginScreen } from "./components/login/LoginScreen";
 import { Sidebar } from "./components/sidebar/Sidebar";
+import { BrowserDownloadModal } from "./components/browser-download/BrowserDownloadModal";
 import { HomePage } from "./pages/HomePage";
 import { RedditStoryPage } from "./pages/RedditStoryPage";
 import { LibraryPage } from "./pages/LibraryPage";
@@ -15,6 +16,7 @@ function App() {
   return (
     <div className="flex w-full h-full absolute inset-0 overflow-hidden">
       <LoginScreen />
+      <BrowserDownloadModal />
 
       <Sidebar />
 

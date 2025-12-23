@@ -5,7 +5,7 @@ import path from "path";
 import os from "os";
 import http from "http";
 import { eq, desc } from "drizzle-orm";
-import render from "../remotion/render";
+import render, { ensureBrowserWithProgress } from "../remotion/render";
 import { initDb, getDb, schema } from "../libs/db";
 
 initDb();
@@ -193,6 +193,21 @@ ipcMain.handle("FETCH_IMAGE_BASE64", async (_event, url: string) => {
     return {
       ok: false,
       error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
+// Ensure browser is downloaded (can be called on app startup or before rendering)
+ipcMain.handle("ENSURE_BROWSER", async () => {
+  try {
+    log.info("Ensuring browser is available...");
+    const browserPath = await ensureBrowserWithProgress();
+    return { success: true, path: browserPath };
+  } catch (error) {
+    log.error("Failed to ensure browser:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 });
