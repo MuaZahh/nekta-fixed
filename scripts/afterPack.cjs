@@ -82,48 +82,59 @@ exports.default = async function (context) {
     }
   }
 
-  // Strip existing signatures from chrome-headless-shell binaries
-  // electron-builder will re-sign them properly during its signing pass
+  // Sign chrome-headless-shell binaries with ad-hoc signatures
+  // This fixes signing order issues - dylibs must be signed before executables
+  // electron-builder will re-sign them with the proper identity
   const chromeHeadlessShellDir = path.join(
     appPath,
     "Contents/Resources/app.asar.unpacked/out/chrome-headless-shell"
   );
 
   if (fs.existsSync(chromeHeadlessShellDir)) {
-    console.log(`\n🔏 Stripping signatures from chrome-headless-shell binaries...`);
+    console.log(`\n🔏 Pre-signing chrome-headless-shell binaries (ad-hoc)...`);
 
-    function findBinaries(dir, results = []) {
+    const dylibs = [];
+    const executables = [];
+
+    function findBinaries(dir) {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
-          findBinaries(fullPath, results);
+          findBinaries(fullPath);
         } else {
           const ext = path.extname(entry.name);
           if (ext === ".dylib" || ext === ".so") {
-            results.push(fullPath);
+            dylibs.push(fullPath);
           } else if (ext === "" && !entry.name.includes(".")) {
             try {
               const stats = fs.statSync(fullPath);
               if (stats.mode & fs.constants.S_IXUSR) {
-                results.push(fullPath);
+                executables.push(fullPath);
               }
             } catch (e) {}
           }
         }
       }
-      return results;
     }
 
-    const binaries = findBinaries(chromeHeadlessShellDir);
+    findBinaries(chromeHeadlessShellDir);
 
-    for (const binary of binaries) {
+    // Sign dylibs first, then executables (order matters!)
+    const allBinaries = [...dylibs, ...executables];
+
+    for (const binary of allBinaries) {
       try {
-        execSync(`codesign --remove-signature "${binary}"`, { stdio: "pipe" });
-        console.log(`   ✅ Stripped signature: ${path.basename(binary)}`);
+        // Remove existing signature first
+        try {
+          execSync(`codesign --remove-signature "${binary}"`, { stdio: "pipe" });
+        } catch (e) {}
+
+        // Sign with ad-hoc signature (-)
+        execSync(`codesign --sign - --force --timestamp=none "${binary}"`, { stdio: "pipe" });
+        console.log(`   ✅ Pre-signed: ${path.basename(binary)}`);
       } catch (error) {
-        // May not have a signature to remove, that's fine
-        console.log(`   ⏭️  No signature to strip: ${path.basename(binary)}`);
+        console.log(`   ⚠️  Failed to pre-sign ${path.basename(binary)}: ${error.message}`);
       }
     }
   }
