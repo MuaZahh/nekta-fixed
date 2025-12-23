@@ -6,6 +6,24 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { update } from "./update";
 
+// IMPORTANT: Set up Remotion cache directory BEFORE importing any Remotion-related modules
+// In packaged macOS apps, process.cwd() returns "/" which breaks Remotion's cache directory detection
+// We need to change cwd to a writable directory with a package.json before Remotion modules load
+if (app.isPackaged) {
+  const remotionCacheDir = path.join(app.getPath("userData"), "remotion-cache");
+  if (!fs.existsSync(remotionCacheDir)) {
+    fs.mkdirSync(remotionCacheDir, { recursive: true });
+  }
+  // Create a fake package.json so Remotion finds a valid project root
+  const fakePackageJson = path.join(remotionCacheDir, "package.json");
+  if (!fs.existsSync(fakePackageJson)) {
+    fs.writeFileSync(fakePackageJson, JSON.stringify({ name: "remotion-cache", version: "1.0.0" }));
+  }
+  // Change to the cache directory before any Remotion imports
+  process.chdir(remotionCacheDir);
+  console.log(`Changed cwd to: ${remotionCacheDir} for Remotion cache`);
+}
+
 import "../handlers/renderHandler";
 
 protocol.registerSchemesAsPrivileged([
