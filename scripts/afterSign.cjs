@@ -30,27 +30,15 @@ exports.default = async function (context) {
 
   console.log(`\n🔏 Signing chrome-headless-shell binaries (afterSign)...`);
 
-  // Get signing info from electron-builder context
-  const keychainFile = context.keychainFile;
-  const cscName = context.cscName || process.env.CSC_NAME;
-
-  if (!cscName) {
-    console.log("⏭️  No signing identity (CSC_NAME) found, skipping");
-    return;
-  }
-
-  console.log(`   📋 Identity: ${cscName}`);
-  if (keychainFile) {
-    console.log(`   🔑 Keychain: ${keychainFile}`);
-  }
-
+  // Use standard Developer ID Application identity
+  // electron-builder imports the cert from CSC_LINK, identity is always "Developer ID Application"
+  const identity = "Developer ID Application";
   const entitlementsPath = path.join(process.cwd(), "build/entitlements.mac.plist");
 
+  console.log(`   📋 Identity: ${identity}`);
+
   // Build codesign base command
-  let codesignBase = `codesign --force --sign "${cscName}" --options runtime --timestamp --entitlements "${entitlementsPath}"`;
-  if (keychainFile) {
-    codesignBase += ` --keychain "${keychainFile}"`;
-  }
+  const codesignBase = `codesign --force --sign "${identity}" --options runtime --timestamp --entitlements "${entitlementsPath}"`;
 
   // Find all Mach-O binaries
   const dylibs = [];
