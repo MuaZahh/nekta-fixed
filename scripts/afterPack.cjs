@@ -82,6 +82,21 @@ exports.default = async function (context) {
     }
   }
 
+  // Remove chrome-headless-shell directory entirely to avoid signing issues
+  // Remotion will download it at runtime if needed
+  const chromeHeadlessShellDir = path.join(
+    appPath,
+    "Contents/Resources/app.asar.unpacked/out/chrome-headless-shell"
+  );
+  if (fs.existsSync(chromeHeadlessShellDir)) {
+    try {
+      fs.rmSync(chromeHeadlessShellDir, { recursive: true, force: true });
+      console.log(`   ✅ Removed chrome-headless-shell directory`);
+    } catch (error) {
+      console.log(`   ⚠️  Could not remove chrome-headless-shell: ${error.message}`);
+    }
+  }
+
   console.log(`\n🔧 Fixing FFmpeg library paths in: ${appPath}`);
 
   const ffmpegLibs = [
