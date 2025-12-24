@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Download, CheckCircle2, XCircle } from "lucide-react";
+import Lottie from 'react-lottie'
+import * as animationData from '../../assets/arrow_right_line.json'
+import { CheckIcon, XIcon } from "@phosphor-icons/react";
 
 type DownloadState = "idle" | "downloading" | "complete" | "error";
 
@@ -22,6 +24,15 @@ export function BrowserDownloadModal() {
   const [progress, setProgress] = useState<DownloadProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const defaultAnimIconOptions = {
+    loop: true,
+    autoplay: true,
+    animationData: animationData,
+    rendererSettings: {
+      preserveAspectRatio: 'xMidYMid slice',
+    },
+  }
+
   const onDownloadStart = useCallback(() => {
     setState("downloading");
     setProgress({ percent: 0, downloadedBytes: 0, totalBytes: 0 });
@@ -37,10 +48,10 @@ export function BrowserDownloadModal() {
 
   const onDownloadComplete = useCallback(() => {
     setState("complete");
-    // Auto-hide after 2 seconds
+    
     setTimeout(() => {
       setState("idle");
-    }, 2000);
+    }, 1000);
   }, []);
 
   const onDownloadError = useCallback(
@@ -71,20 +82,23 @@ export function BrowserDownloadModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw]">
+      <div className="bg-white border border-neutral-100 rounded-2xl p-4 w-[400px] max-w-[90vw]">
         {state === "downloading" && (
           <>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Download className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-[6px] bg-black  rounded-lg rotate-90">
+                <Lottie
+                    options={defaultAnimIconOptions}
+                    height={20}
+                    width={20}
+                    isStopped={false}
+                    isPaused={false}
+                  />
               </div>
               <div>
                 <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
                   Downloading Renderer
                 </h3>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  First-time setup for video rendering
-                </p>
               </div>
             </div>
 
@@ -99,51 +113,48 @@ export function BrowserDownloadModal() {
                   {progress ? `${Math.round(progress.percent * 100)}%` : "0%"}
                 </span>
               </div>
-              <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+              <div className="h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${(progress?.percent ?? 0) * 100}%` }}
                 />
               </div>
             </div>
-
-            <p className="mt-4 text-xs text-zinc-500 dark:text-zinc-400 text-center">
-              This only happens once. Please wait...
-            </p>
           </>
         )}
 
         {state === "complete" && (
-          <div className="flex flex-col items-center py-4">
-            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full mb-3">
-              <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+          <div className="flex gap-3 items-center justify-center py-4">
+           <div className="p-[6px] bg-black  rounded-lg  text-white">
+              <CheckIcon size={20} />
             </div>
             <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
               Download Complete
             </h3>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Ready to render videos
-            </p>
           </div>
         )}
 
         {state === "error" && (
-          <div className="flex flex-col items-center py-4">
-            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full mb-3">
-              <XCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
+          <div className="flex flex-col justify-center items-center">
+            <div className="flex items-center justify-center gap-2">
+              <div className="p-[6px] bg-red-500  rounded-lg  text-white">
+                <XIcon size={20} />
+              </div>
+              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                Download Failed
+              </h3>
             </div>
-            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
-              Download Failed
-            </h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center mt-1">
               {error || "An error occurred while downloading"}
             </p>
-            <button
+            <div className="flex justify-center w-full">
+              <button
               onClick={() => setState("idle")}
               className="mt-4 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
             >
               Close
             </button>
+            </div>
           </div>
         )}
       </div>
