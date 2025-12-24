@@ -31,8 +31,6 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@remotion/animation-utils": "4.0.382",
-    "@remotion/bundler": "4.0.382",
-    "@remotion/cli": "4.0.382",
     "@remotion/google-fonts": "4.0.382",
     "@remotion/layout-utils": "4.0.382",
     "@remotion/media": "4.0.382",
@@ -61,6 +59,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.42.1",
+    "@remotion/bundler": "4.0.382",
+    "@remotion/cli": "4.0.382",
     "@types/better-sqlite3": "^7.6.13",
     "@types/bun": "^1.1.6",
     "@types/react": "^18.2.64",
