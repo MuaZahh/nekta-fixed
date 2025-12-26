@@ -18,10 +18,10 @@
     "pree2e": "vite build --mode=test",
     "e2e": "playwright test",
     "bundle-remotion": "node electron/remotion/bundleRemotion.js",
-    "video": "remotion studio src/remotion/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "remotion": "remotion studio src/remotion/index.ts"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.4",
