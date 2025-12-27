@@ -1,14 +1,40 @@
 import { useContentStore, contentManager } from '@/lib/contentManager'
 import { CircleNotchIcon, DownloadSimpleIcon, CheckCircleIcon } from '@phosphor-icons/react'
 
-export const ContentDownloadIndicator = () => {
-  const isLoading = useContentStore((s) => s.isLoading)
-  const isSyncing = useContentStore((s) => s.isSyncing)
-  const isDownloading = useContentStore((s) => s.isDownloading)
-  const error = useContentStore((s) => s.error)
-  const downloadProgress = useContentStore((s) => s.downloadProgress)
+interface ContentDownloadIndicatorProps {
+  testMode?: boolean
+}
 
-  if (!isLoading && !isSyncing && !isDownloading && !error) {
+const TEST_DATA = {
+  isLoading: false,
+  isSyncing: false,
+  isDownloading: true,
+  error: null as string | null,
+  downloadProgress: {
+    totalItems: 3,
+    completedItems: 1,
+    currentItem: 'https://cdn.example.com/videos/sample.mp4',
+    totalSize: 267787602,
+    downloadedSize: 95330145,
+    currentItemBytes: 45000000,
+    currentItemTotalBytes: 172457457,
+  },
+}
+
+export const ContentDownloadIndicator = ({ testMode = false }: ContentDownloadIndicatorProps) => {
+  const storeIsLoading = useContentStore((s) => s.isLoading)
+  const storeIsSyncing = useContentStore((s) => s.isSyncing)
+  const storeIsDownloading = useContentStore((s) => s.isDownloading)
+  const storeError = useContentStore((s) => s.error)
+  const storeDownloadProgress = useContentStore((s) => s.downloadProgress)
+
+  const isLoading = testMode ? TEST_DATA.isLoading : storeIsLoading
+  const isSyncing = testMode ? TEST_DATA.isSyncing : storeIsSyncing
+  const isDownloading = testMode ? TEST_DATA.isDownloading : storeIsDownloading
+  const error = testMode ? TEST_DATA.error : storeError
+  const downloadProgress = testMode ? TEST_DATA.downloadProgress : storeDownloadProgress
+
+  if (!testMode && !isLoading && !isSyncing && !isDownloading && !error) {
     return null
   }
 
@@ -28,7 +54,7 @@ export const ContentDownloadIndicator = () => {
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
-      <div className="bg-white border border-neutral-200 rounded-lg shadow-lg p-3 min-w-[280px]">
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-lg p-3 min-w-[280px]">
         {error && (
           <div className="flex items-center gap-2 text-red-600 text-sm">
             <span className="font-medium">Error:</span>
@@ -70,7 +96,7 @@ export const ContentDownloadIndicator = () => {
               </div>
             )}
 
-            <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+            <div className="w-full h-1 bg-neutral-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-black rounded-full transition-all duration-75 ease-out"
                 style={{

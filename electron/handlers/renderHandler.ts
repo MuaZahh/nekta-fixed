@@ -879,8 +879,8 @@ ipcMain.handle("CONTENT_DOWNLOAD_ITEM", async (event, uid: string) => {
         const { done, value } = await reader.read();
         if (done) break;
 
-        writeStream.write(Buffer.from(value));
         downloadedBytes += value.length;
+        writeStream.write(value);
 
         const now = Date.now();
         if (now - lastProgressUpdate > 100) {
@@ -895,7 +895,10 @@ ipcMain.handle("CONTENT_DOWNLOAD_ITEM", async (event, uid: string) => {
       }
     } finally {
       writeStream.end();
-      await new Promise<void>((resolve) => writeStream.on("finish", resolve));
+      await new Promise<void>((resolve, reject) => {
+        writeStream.on("finish", resolve);
+        writeStream.on("error", reject);
+      });
     }
 
     db.update(schema.mediaContent)

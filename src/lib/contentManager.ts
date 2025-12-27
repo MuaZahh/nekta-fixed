@@ -285,14 +285,15 @@ class ContentManager {
         )
 
         if (result.ok) {
+          const fileSize = result.size || item.size || 0
           completedItems++
-          downloadedSize += result.size || item.size || 0
+          downloadedSize += fileSize
 
           store.updateDownloadProgress({
             completedItems,
             downloadedSize,
-            currentItemBytes: 0,
-            currentItemTotalBytes: 0,
+            currentItemBytes: fileSize,
+            currentItemTotalBytes: fileSize,
           })
 
           store.updateItem(item.uid, {
@@ -301,14 +302,16 @@ class ContentManager {
             mediaUrl: result.localPath
               ? `media://${encodeURIComponent(result.localPath)}`
               : null,
-            size: result.size || item.size,
+            size: fileSize,
           })
         } else {
-          console.error(`Failed to download ${item.url}:`, result.error)
+          console.error(`[ContentManager] Failed to download ${item.url}:`, result.error)
         }
       }
 
       await this.refreshItems()
+
+      await new Promise((resolve) => setTimeout(resolve, 500))
     } catch (error) {
       console.error('Download failed:', error)
       store.setError(error instanceof Error ? error.message : 'Download failed')
