@@ -15,6 +15,13 @@
       "when": 1765720000000,
       "tag": "0001_cache_files",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1766842883022,
+      "tag": "0002_little_tenebrous",
+      "breakpoints": true
     }
   ]
 }

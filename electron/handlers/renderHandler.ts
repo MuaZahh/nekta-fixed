@@ -1,10 +1,11 @@
-import { ipcMain, shell, dialog, net } from "electron";
+import { ipcMain, shell, dialog, net, app } from "electron";
 import log from "electron-log/main";
 import fs from "fs";
 import path from "path";
 import os from "os";
 import http from "http";
-import { eq, desc } from "drizzle-orm";
+import crypto from "crypto";
+import { eq, desc, and, isNotNull } from "drizzle-orm";
 import render, { ensureBrowserWithProgress } from "../remotion/render";
 import { initDb, getDb, schema } from "../libs/db";
 
@@ -570,3 +571,468 @@ ipcMain.handle(
     }
   }
 );
+
+// ============================================================================
+// Content Management Handlers
+// ============================================================================
+
+interface ManifestContent {
+  version: string;
+  video?: Array<{
+    url: string;
+    category: string;
+    tags: string[];
+    size?: number;
+    name?: string;
+    metadata?: Record<string, unknown>;
+  }>;
+  image?: Array<{
+    url: string;
+    category: string;
+    tags: string[];
+    size?: number;
+    name?: string;
+    metadata?: Record<string, unknown>;
+  }>;
+  audio?: Array<{
+    url: string;
+    category: string;
+    tags: string[];
+    size?: number;
+    name?: string;
+    metadata?: Record<string, unknown>;
+  }>;
+}
+
+function getContentDir(): string {
+  const appDataPath = app.getPath("userData");
+  const contentDir = path.join(appDataPath, "content");
+  if (!fs.existsSync(contentDir)) {
+    fs.mkdirSync(contentDir, { recursive: true });
+  }
+  return contentDir;
+}
+
+function computeManifestHash(content: string): string {
+  return crypto.createHash("sha256").update(content).digest("hex");
+}
+
+function generateUidFromUrl(url: string): string {
+  return crypto.createHash("md5").update(url).digest("hex").slice(0, 16);
+}
+
+ipcMain.handle("CONTENT_FETCH_MANIFEST", async (_event, manifestUrl: string) => {
+  try {
+    const response = await net.fetch(manifestUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch manifest: ${response.status}`);
+    }
+
+    const text = await response.text();
+    const manifest = JSON.parse(text) as ManifestContent;
+    const contentHash = computeManifestHash(text);
+
+    return { ok: true, manifest, contentHash };
+  } catch (error) {
+    log.error("Failed to fetch manifest:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
+ipcMain.handle("CONTENT_CHECK_MANIFEST", async (_event, manifestUrl: string, contentHash: string) => {
+  try {
+    const db = getDb();
+    const existing = db
+      .select()
+      .from(schema.contentManifest)
+      .where(eq(schema.contentManifest.manifestUrl, manifestUrl))
+      .get();
+
+    if (!existing) {
+      return { ok: true, changed: true, isNew: true };
+    }
+
+    const changed = existing.contentHash !== contentHash;
+    return { ok: true, changed, isNew: false };
+  } catch (error) {
+    log.error("Failed to check manifest:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
+ipcMain.handle(
+  "CONTENT_UPDATE_MANIFEST",
+  async (_event, manifestUrl: string, contentHash: string, version?: string) => {
+    try {
+      const db = getDb();
+      const existing = db
+        .select()
+        .from(schema.contentManifest)
+        .where(eq(schema.contentManifest.manifestUrl, manifestUrl))
+        .get();
+
+      if (existing) {
+        db.update(schema.contentManifest)
+          .set({
+            contentHash,
+            version,
+            lastCheckedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.contentManifest.manifestUrl, manifestUrl))
+          .run();
+      } else {
+        db.insert(schema.contentManifest)
+          .values({
+            manifestUrl,
+            contentHash,
+            version,
+          })
+          .run();
+      }
+
+      return { ok: true };
+    } catch (error) {
+      log.error("Failed to update manifest:", error);
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+);
+
+ipcMain.handle(
+  "CONTENT_SYNC_FROM_MANIFEST",
+  async (
+    _event,
+    manifest: ManifestContent
+  ) => {
+    try {
+      const db = getDb();
+      const allUrls: string[] = [];
+
+      for (const type of ["video", "image", "audio"] as const) {
+        const items = manifest[type];
+        if (!items) continue;
+
+        for (const item of items) {
+          allUrls.push(item.url);
+          const uid = generateUidFromUrl(item.url);
+
+          const existing = db
+            .select()
+            .from(schema.mediaContent)
+            .where(eq(schema.mediaContent.url, item.url))
+            .get();
+
+          if (existing) {
+            // Update existing
+            db.update(schema.mediaContent)
+              .set({
+                category: item.category,
+                tags: item.tags,
+                size: item.size,
+                name: item.name,
+                metadata: item.metadata,
+                updatedAt: new Date(),
+              })
+              .where(eq(schema.mediaContent.url, item.url))
+              .run();
+          } else {
+            db.insert(schema.mediaContent)
+              .values({
+                uid,
+                url: item.url,
+                type,
+                category: item.category,
+                tags: item.tags,
+                size: item.size,
+                name: item.name,
+                metadata: item.metadata,
+              })
+              .run();
+          }
+        }
+      }
+
+      const pendingDownloads = db
+        .select()
+        .from(schema.mediaContent)
+        .all()
+        .filter((c) => allUrls.includes(c.url) && !c.localPath);
+
+      return {
+        ok: true,
+        totalItems: allUrls.length,
+        pendingDownloads: pendingDownloads.length,
+      };
+    } catch (error) {
+      log.error("Failed to sync content from manifest:", error);
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+);
+
+ipcMain.handle("CONTENT_GET_PENDING_DOWNLOADS", async () => {
+  try {
+    const db = getDb();
+    const allContent = db.select().from(schema.mediaContent).all();
+
+    const pending = allContent.filter((c) => {
+      if (!c.localPath) return true;
+      if (!fs.existsSync(c.localPath)) {
+        db.update(schema.mediaContent)
+          .set({ localPath: null, downloadedAt: null })
+          .where(eq(schema.mediaContent.uid, c.uid))
+          .run();
+        return true;
+      }
+      return false;
+    });
+
+    const totalSize = pending.reduce((sum, c) => sum + (c.size || 0), 0);
+
+    return {
+      ok: true,
+      items: pending.map((p) => ({
+        uid: p.uid,
+        url: p.url,
+        type: p.type,
+        size: p.size,
+      })),
+      totalSize,
+    };
+  } catch (error) {
+    log.error("Failed to get pending downloads:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
+ipcMain.handle("CONTENT_DOWNLOAD_ITEM", async (event, uid: string) => {
+  try {
+    const db = getDb();
+    const content = db
+      .select()
+      .from(schema.mediaContent)
+      .where(eq(schema.mediaContent.uid, uid))
+      .get();
+
+    if (!content) {
+      throw new Error("Content not found");
+    }
+
+    if (content.localPath && fs.existsSync(content.localPath)) {
+      return { ok: true, alreadyDownloaded: true, localPath: content.localPath, size: content.size };
+    }
+
+    if (content.localPath && !fs.existsSync(content.localPath)) {
+      db.update(schema.mediaContent)
+        .set({ localPath: null, downloadedAt: null })
+        .where(eq(schema.mediaContent.uid, uid))
+        .run();
+    }
+
+    const response = await net.fetch(content.url);
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.status}`);
+    }
+
+    const contentLength = response.headers.get("content-length");
+    const totalBytes = contentLength ? parseInt(contentLength, 10) : content.size || 0;
+
+    const urlPath = new URL(content.url).pathname;
+    const ext = path.extname(urlPath) || `.${content.type === "video" ? "mp4" : content.type === "audio" ? "mp3" : "png"}`;
+
+    const contentDir = getContentDir();
+    const typeDir = path.join(contentDir, content.type);
+    if (!fs.existsSync(typeDir)) {
+      fs.mkdirSync(typeDir, { recursive: true });
+    }
+
+    const filename = `${content.uid}${ext}`;
+    const localPath = path.join(typeDir, filename);
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("Failed to get response reader");
+    }
+
+    const writeStream = fs.createWriteStream(localPath);
+    let downloadedBytes = 0;
+    let lastProgressUpdate = 0;
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        writeStream.write(Buffer.from(value));
+        downloadedBytes += value.length;
+
+        const now = Date.now();
+        if (now - lastProgressUpdate > 100) {
+          event.sender.send("CONTENT_DOWNLOAD_PROGRESS", {
+            uid,
+            downloadedBytes,
+            totalBytes,
+            progress: totalBytes > 0 ? downloadedBytes / totalBytes : 0,
+          });
+          lastProgressUpdate = now;
+        }
+      }
+    } finally {
+      writeStream.end();
+      await new Promise<void>((resolve) => writeStream.on("finish", resolve));
+    }
+
+    db.update(schema.mediaContent)
+      .set({
+        localPath,
+        size: downloadedBytes,
+        downloadedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.mediaContent.uid, uid))
+      .run();
+
+    log.info(`Downloaded content: ${content.url} -> ${localPath} (${downloadedBytes} bytes)`);
+
+    return { ok: true, localPath, size: downloadedBytes };
+  } catch (error) {
+    log.error("Failed to download content:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
+ipcMain.handle(
+  "CONTENT_GET_BY_CATEGORY",
+  async (_event, type: string, category: string) => {
+    try {
+      const db = getDb();
+      const content = db
+        .select()
+        .from(schema.mediaContent)
+        .where(
+          and(
+            eq(schema.mediaContent.type, type),
+            eq(schema.mediaContent.category, category),
+            isNotNull(schema.mediaContent.localPath)
+          )
+        )
+        .all();
+
+      return {
+        ok: true,
+        items: content.map((c) => ({
+          uid: c.uid,
+          url: c.url,
+          type: c.type,
+          category: c.category,
+          tags: c.tags,
+          name: c.name,
+          size: c.size,
+          localPath: c.localPath,
+          mediaUrl: c.localPath ? `media://${encodeURIComponent(c.localPath)}` : null,
+          metadata: c.metadata,
+        })),
+      };
+    } catch (error) {
+      log.error("Failed to get content by category:", error);
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+);
+
+ipcMain.handle("CONTENT_GET_ALL", async () => {
+  try {
+    const db = getDb();
+    const content = db.select().from(schema.mediaContent).all();
+
+    return {
+      ok: true,
+      items: content.map((c) => ({
+        uid: c.uid,
+        url: c.url,
+        type: c.type,
+        category: c.category,
+        tags: c.tags,
+        name: c.name,
+        size: c.size,
+        localPath: c.localPath,
+        mediaUrl: c.localPath ? `media://${encodeURIComponent(c.localPath)}` : null,
+        isDownloaded: !!c.localPath,
+        metadata: c.metadata,
+      })),
+    };
+  } catch (error) {
+    log.error("Failed to get all content:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
+ipcMain.handle("CONTENT_GET_SIZE", async () => {
+  try {
+    const contentDir = getContentDir();
+    let totalSize = 0;
+
+    function calculateSize(dir: string) {
+      if (!fs.existsSync(dir)) return;
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        const stat = fs.statSync(filePath);
+        if (stat.isDirectory()) {
+          calculateSize(filePath);
+        } else {
+          totalSize += stat.size;
+        }
+      }
+    }
+
+    calculateSize(contentDir);
+
+    return { ok: true, totalSize };
+  } catch (error) {
+    log.error("Failed to get content size:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
+ipcMain.handle("CONTENT_OPEN_FOLDER", async () => {
+  try {
+    const contentDir = getContentDir();
+    shell.openPath(contentDir);
+    return { ok: true };
+  } catch (error) {
+    log.error("Failed to open content folder:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});

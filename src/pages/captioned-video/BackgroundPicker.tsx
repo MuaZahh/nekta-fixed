@@ -1,9 +1,17 @@
-import { useState } from 'react'
-import { PlayIcon, CheckIcon, ArrowsOutIcon } from '@phosphor-icons/react'
+import { useState, useMemo } from 'react'
+import { PlayIcon, CheckIcon, ArrowsOutIcon, CircleNotchIcon, CloudArrowDownIcon } from '@phosphor-icons/react'
 import { BackgroundVideo } from './types'
-import { BACKGROUND_VIDEOS } from './data'
 import { MediaPreview } from '@/components/shared/MediaPreview'
 import { useCaptionedVideoStore } from './store'
+import { useContentStore, MediaContentItem } from '@/lib/contentManager'
+
+const contentItemToBackground = (item: MediaContentItem): BackgroundVideo => ({
+  uid: item.uid,
+  name: item.name || item.tags?.join(', ') || 'Background',
+  url: item.mediaUrl || item.url,
+  thumbnailUrl: item.mediaUrl || item.url,
+  durationMs: 30000,
+})
 
 export const BackgroundPicker = () => {
   const [previewVideo, setPreviewVideo] = useState<BackgroundVideo | null>(null)
@@ -11,6 +19,22 @@ export const BackgroundPicker = () => {
   const selectedBackground = useCaptionedVideoStore((s) => s.selectedBackground)
   const setSelectedBackground = useCaptionedVideoStore((s) => s.setSelectedBackground)
   const clearSelectedBackground = useCaptionedVideoStore((s) => s.clearSelectedBackground)
+
+  const isDownloading = useContentStore((s) => s.isDownloading)
+  const isLoading = useContentStore((s) => s.isLoading)
+  const items = useContentStore((s) => s.items)
+
+  const backgroundVideos = useMemo(() => {
+    return items
+      .filter((item) => item.type === 'video' && item.category === 'background' && item.isDownloaded)
+      .map(contentItemToBackground)
+  }, [items])
+
+  const pendingCount = useMemo(() => {
+    return items.filter(
+      (item) => item.type === 'video' && item.category === 'background' && !item.isDownloaded
+    ).length
+  }, [items])
 
   const isSelected = (uid: string) => selectedBackground?.uid === uid
 
@@ -22,6 +46,29 @@ export const BackgroundPicker = () => {
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[170px] text-neutral-400">
+        <CircleNotchIcon className="animate-spin" size={24} />
+      </div>
+    )
+  }
+
+  if (backgroundVideos.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[170px] text-neutral-400 gap-2">
+        {isDownloading && pendingCount > 0 ? (
+          <>
+            <CloudArrowDownIcon size={32} className="animate-pulse" />
+            <span className="text-sm">Downloading {pendingCount} video{pendingCount > 1 ? 's' : ''}...</span>
+          </>
+        ) : (
+          <span className="text-sm">No background videos available</span>
+        )}
+      </div>
+    )
+  }
+
   return (
     <>
       <div
@@ -29,7 +76,7 @@ export const BackgroundPicker = () => {
         style={{ height: 200 }}
       >
         <div className="flex gap-3 pb-3 h-full items-start">
-          {BACKGROUND_VIDEOS.map((video) => {
+          {backgroundVideos.map((video) => {
             const selected = isSelected(video.uid)
             return (
               <button
@@ -42,17 +89,23 @@ export const BackgroundPicker = () => {
                 }`}
                 style={{
                   height: 170,
-                  width: 96, // 9:16 ratio: 170 * 9/16 = 95.625
+                  width: 96,
                 }}
               >
-                <img
+                <video
                   src={video.thumbnailUrl}
-                  alt={video.name}
                   className="w-full h-full object-cover"
+                  muted
+                  playsInline
+                  onMouseEnter={(e) => e.currentTarget.play()}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.pause()
+                    e.currentTarget.currentTime = 0
+                  }}
                 />
 
                 {/* Hover overlay */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                   <PlayIcon size={24} className="text-white" weight="fill" />
                 </div>
 
@@ -83,6 +136,17 @@ export const BackgroundPicker = () => {
               </button>
             )
           })}
+
+          {/* Show pending downloads indicator */}
+          {isDownloading && pendingCount > 0 && (
+            <div
+              className="relative shrink-0 rounded-xl overflow-hidden border-2 border-dashed border-neutral-200 flex flex-col items-center justify-center"
+              style={{ height: 170, width: 96 }}
+            >
+              <CloudArrowDownIcon size={24} className="text-neutral-300 animate-pulse" />
+              <span className="text-[10px] text-neutral-400 mt-1">+{pendingCount}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -90,7 +154,7 @@ export const BackgroundPicker = () => {
         open={!!previewVideo}
         onClose={() => setPreviewVideo(null)}
         mediaUrl={previewVideo?.url || ''}
-        mediaType="image"
+        mediaType="video"
         title={previewVideo?.name}
       />
     </>

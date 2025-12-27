@@ -1,5 +1,32 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 
+// Content manifest tracking - stores hash to detect changes
+export const contentManifest = sqliteTable('content_manifest', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  manifestUrl: text('manifest_url').notNull().unique(),
+  contentHash: text('content_hash').notNull(),
+  version: text('version'),
+  lastCheckedAt: integer('last_checked_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+})
+
+// Media content from CDN manifest
+export const mediaContent = sqliteTable('media_content', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  uid: text('uid').notNull().unique(),
+  url: text('url').notNull().unique(),
+  type: text('type').notNull(), // 'video' | 'image' | 'audio'
+  category: text('category').notNull(), // 'background', etc.
+  tags: text('tags', { mode: 'json' }).$type<string[]>().default([]),
+  name: text('name'),
+  size: integer('size'), // in bytes
+  localPath: text('local_path'), // path to downloaded file
+  downloadedAt: integer('downloaded_at', { mode: 'timestamp' }),
+  metadata: text('metadata', { mode: 'json' }).$type<Record<string, unknown>>(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+})
+
 export const libraries = sqliteTable('libraries', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   uid: text('uid').notNull().unique(),
