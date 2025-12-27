@@ -13,7 +13,7 @@ interface Suggestion {
 const suggestions: Record<ContentType, Suggestion[]> = {
   videos: [
     { id: 'v1', title: 'AI Story', description: 'Generate narrated stories with AI voices and visuals', route: 'ai-video' },
-    { id: 'v6', title: 'Brainrot', description: 'Turn Reddit posts into viral video content', route: 'reddit-story' },
+    { id: 'v6', title: 'Cpationed video', description: 'Create a video with captions and/or dialog', route: 'captioned-video' },
     { id: 'v2', title: 'Reddit Story', description: 'Turn Reddit posts into viral video content', route: 'reddit-story' },
     { id: 'v3', title: 'Transcribe', description: 'Convert speech to text from any video or audio' },
     { id: 'v4', title: 'Add Captions', description: 'Add animated subtitles to your videos' },

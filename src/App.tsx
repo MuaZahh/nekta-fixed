@@ -9,6 +9,7 @@ import { LibraryPage } from "./pages/LibraryPage";
 import { useRouter } from "./state/router";
 import { AIVideoPage } from "./pages/AIVideoPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { CaptionedVideoPage } from "./pages/CaptionedVideoPage";
 
 function App() {
   const route = useRouter((state) => state.route);
@@ -26,6 +27,8 @@ function App() {
         {route === 'reddit-story' && <RedditStoryPage />}
         {route === 'library' && <LibraryPage />}
         {route === 'settings' && <SettingsPage />}
+        {route === 'captioned-video' && <CaptionedVideoPage />}
+
       </main>
     </div>
   );

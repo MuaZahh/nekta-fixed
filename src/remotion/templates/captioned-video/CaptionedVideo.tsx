@@ -4,6 +4,8 @@ import Subtitle from "@/remotion/components/Subtitle";
 import { FPS } from "@/remotion/constants";
 import { CaptionedVideoTimeline, CaptionedVideoBackground } from "./types";
 
+const MAX_WORDS_PER_LINE = 8;
+
 const Background: React.FC<{ item: CaptionedVideoBackground }> = ({ item }) => {
   if (item.type === "image") {
     return (
@@ -67,32 +69,49 @@ export const CaptionedVideo: React.FC<CaptionedVideoTimeline> = ({
 
       {dialog.map((dialogMessage, dialogIndex) => {
         let messageOffsetMs = 0;
-        
+
         for (let i = 0; i < dialogIndex; i++) {
           messageOffsetMs += dialog[i].message.reduce((sum, m) => sum + m.durationMs, 0);
         }
 
         return dialogMessage.message.map((segment, segmentIndex) => {
-          const startMs = messageOffsetMs;
+          const segmentStartMs = messageOffsetMs;
           messageOffsetMs += segment.durationMs;
 
-          const startFrame = Math.round((startMs / 1000) * FPS);
-          const duration = Math.round((segment.durationMs / 1000) * FPS);
+          const wordChunks: typeof segment.words[] = [];
+          for (let i = 0; i < segment.words.length; i += MAX_WORDS_PER_LINE) {
+            wordChunks.push(segment.words.slice(i, i + MAX_WORDS_PER_LINE));
+          }
 
-          return (
-            <Sequence
-              key={`dialog-${dialogIndex}-${segmentIndex}`}
-              from={startFrame}
-              durationInFrames={duration}
-            >
-              {segment.audioUrl && <Audio src={segment.audioUrl} />}
-              <Subtitle
-                text={segment.words.map(w => w.word).join(' ')}
-                wordTimestamps={segment.words}
-                primaryColor={settings.highlightOutlineColor}
-              />
-            </Sequence>
-          );
+          return wordChunks.map((chunk, chunkIndex) => {
+            const chunkStartMs = segmentStartMs + chunk[0].startMs;
+            const chunkEndMs = segmentStartMs + chunk[chunk.length - 1].endMs;
+            const chunkDurationMs = chunkEndMs - chunkStartMs;
+
+            const startFrame = Math.round((chunkStartMs / 1000) * FPS);
+            const duration = Math.max(1, Math.round((chunkDurationMs / 1000) * FPS));
+
+            const adjustedWords = chunk.map(w => ({
+              ...w,
+              startMs: w.startMs - chunk[0].startMs,
+              endMs: w.endMs - chunk[0].startMs,
+            }));
+
+            return (
+              <Sequence
+                key={`dialog-${dialogIndex}-${segmentIndex}-${chunkIndex}`}
+                from={startFrame}
+                durationInFrames={duration}
+              >
+                {chunkIndex === 0 && segment.audioUrl && <Audio src={segment.audioUrl} />}
+                <Subtitle
+                  text={chunk.map(w => w.word).join(' ')}
+                  wordTimestamps={adjustedWords}
+                  primaryColor={settings.highlightOutlineColor}
+                />
+              </Sequence>
+            );
+          });
         });
       })}
     </AbsoluteFill>
