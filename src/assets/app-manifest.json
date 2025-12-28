@@ -2,6 +2,84 @@
   "version": "1.0",
   "imageModels": [
     {
+      "id": "openai/gpt-image-1.5",
+      "name": "GPT Image 1.5",
+      "maker": "OpenAI",
+      "sizeConfig": {
+        "type": "presetGrid",
+        "aspectRatios": ["1:1", "3:2", "2:3"],
+        "sizes": {
+          "1:1": [1024, 1024],
+          "3:2": [1536, 1024],
+          "2:3": [1024, 1536]
+        },
+        "default": { "aspectRatio": "1:1" }
+      }
+    },
+    {
+      "id": "openai/gpt-image-1",
+      "name": "GPT Image 1",
+      "maker": "OpenAI",
+      "sizeConfig": {
+        "type": "presetGrid",
+        "aspectRatios": ["1:1", "3:2", "2:3"],
+        "sizes": {
+          "1:1": [1024, 1024],
+          "3:2": [1536, 1024],
+          "2:3": [1024, 1536]
+        },
+        "default": { "aspectRatio": "1:1" }
+      }
+    },
+    {
+      "id": "openai/gpt-image-1-mini",
+      "name": "GPT Image 1 Mini",
+      "maker": "OpenAI",
+      "sizeConfig": {
+        "type": "presetGrid",
+        "aspectRatios": ["1:1", "3:2", "2:3"],
+        "sizes": {
+          "1:1": [1024, 1024],
+          "3:2": [1536, 1024],
+          "2:3": [1024, 1536]
+        },
+        "default": { "aspectRatio": "1:1" }
+      }
+    },
+    {
+      "id": "openai/dall-e-3",
+      "name": "DALL-E 3",
+      "maker": "OpenAI",
+      "deprecated": true,
+      "deprecationDate": "2026-05-12",
+      "sizeConfig": {
+        "type": "presetGrid",
+        "aspectRatios": ["1:1", "16:9", "9:16"],
+        "sizes": {
+          "1:1": [1024, 1024],
+          "16:9": [1792, 1024],
+          "9:16": [1024, 1792]
+        },
+        "default": { "aspectRatio": "1:1" }
+      }
+    },
+    {
+      "id": "openai/dall-e-2",
+      "name": "DALL-E 2",
+      "maker": "OpenAI",
+      "deprecated": true,
+      "deprecationDate": "2026-05-12",
+      "sizeConfig": {
+        "type": "presetGrid",
+        "aspectRatios": ["1:1"],
+        "sizes": {
+          "1:1": [1024, 1024]
+        },
+        "fixedSizes": [[256, 256], [512, 512], [1024, 1024]],
+        "default": { "aspectRatio": "1:1" }
+      }
+    },
+    {
       "id": "google/imagen-4.0-preview",
       "name": "Imagen 4.0 Preview",
       "maker": "Google",
@@ -402,6 +480,510 @@
       }
     }
   ],
+  "textModels": [
+    {
+      "id": "openai/gpt-5.2",
+      "name": "GPT-5.2",
+      "maker": "OpenAI",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "knowledgeCutoff": "2025-08-31",
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/gpt-5.2-pro",
+      "name": "GPT-5.2 Pro",
+      "maker": "OpenAI",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "knowledgeCutoff": "2025-08-31",
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/gpt-5.2-chat-latest",
+      "name": "GPT-5.2 Chat",
+      "maker": "OpenAI",
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384,
+      "knowledgeCutoff": "2025-08-31"
+    },
+    {
+      "id": "openai/gpt-5.1",
+      "name": "GPT-5.1",
+      "maker": "OpenAI",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "knowledgeCutoff": "2024-09-30",
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/gpt-5.1-codex",
+      "name": "GPT-5.1 Codex",
+      "maker": "OpenAI",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "knowledgeCutoff": "2024-09-30",
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/gpt-5",
+      "name": "GPT-5",
+      "maker": "OpenAI",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "knowledgeCutoff": "2024-09-30",
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/gpt-5-mini",
+      "name": "GPT-5 Mini",
+      "maker": "OpenAI",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "knowledgeCutoff": "2024-05-31",
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/gpt-5-nano",
+      "name": "GPT-5 Nano",
+      "maker": "OpenAI",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "knowledgeCutoff": "2024-05-31"
+    },
+    {
+      "id": "openai/gpt-4.1",
+      "name": "GPT-4.1",
+      "maker": "OpenAI",
+      "contextWindow": 1048576,
+      "maxOutputTokens": 32768,
+      "knowledgeCutoff": "2024-06-01"
+    },
+    {
+      "id": "openai/gpt-4.1-mini",
+      "name": "GPT-4.1 Mini",
+      "maker": "OpenAI",
+      "contextWindow": 1048576,
+      "maxOutputTokens": 32768,
+      "knowledgeCutoff": "2024-06-01"
+    },
+    {
+      "id": "openai/gpt-4.1-nano",
+      "name": "GPT-4.1 Nano",
+      "maker": "OpenAI",
+      "contextWindow": 1048576,
+      "maxOutputTokens": 32768,
+      "knowledgeCutoff": "2024-06-01"
+    },
+    {
+      "id": "openai/gpt-4o",
+      "name": "GPT-4o",
+      "maker": "OpenAI",
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384
+    },
+    {
+      "id": "openai/gpt-4o-mini",
+      "name": "GPT-4o Mini",
+      "maker": "OpenAI",
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384
+    },
+    {
+      "id": "openai/o3",
+      "name": "o3",
+      "maker": "OpenAI",
+      "contextWindow": 200000,
+      "maxOutputTokens": 100000,
+      "knowledgeCutoff": "2024-06-01",
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/o3-mini",
+      "name": "o3 Mini",
+      "maker": "OpenAI",
+      "contextWindow": 200000,
+      "maxOutputTokens": 100000,
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/o3-pro",
+      "name": "o3 Pro",
+      "maker": "OpenAI",
+      "contextWindow": 200000,
+      "maxOutputTokens": 100000,
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/o4-mini",
+      "name": "o4 Mini",
+      "maker": "OpenAI",
+      "contextWindow": 200000,
+      "maxOutputTokens": 100000,
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/o3-deep-research",
+      "name": "o3 Deep Research",
+      "maker": "OpenAI",
+      "contextWindow": 200000,
+      "maxOutputTokens": 100000,
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/o4-mini-deep-research",
+      "name": "o4 Mini Deep Research",
+      "maker": "OpenAI",
+      "contextWindow": 200000,
+      "maxOutputTokens": 100000,
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/o1",
+      "name": "o1",
+      "maker": "OpenAI",
+      "contextWindow": 200000,
+      "maxOutputTokens": 100000,
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/o1-pro",
+      "name": "o1 Pro",
+      "maker": "OpenAI",
+      "contextWindow": 200000,
+      "maxOutputTokens": 100000,
+      "isReasoningModel": true
+    },
+    {
+      "id": "openai/gpt-oss-120b",
+      "name": "GPT-OSS 120B",
+      "maker": "OpenAI",
+      "contextWindow": 128000,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "openai/gpt-oss-20b",
+      "name": "GPT-OSS 20B",
+      "maker": "OpenAI",
+      "contextWindow": 128000,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "moonshot/kimi-k2-instruct-0905",
+      "name": "Kimi K2 Instruct 0905",
+      "maker": "Moonshot",
+      "contextWindow": 262144,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "moonshot/kimi-k2-thinking",
+      "name": "Kimi K2 Thinking",
+      "maker": "Moonshot",
+      "contextWindow": 262144,
+      "maxOutputTokens": 8192,
+      "isReasoningModel": true
+    },
+    {
+      "id": "moonshot/kimi-k2-instruct",
+      "name": "Kimi K2 Instruct",
+      "maker": "Moonshot",
+      "contextWindow": 128000,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "deepseek/deepseek-v3.1",
+      "name": "DeepSeek-V3.1",
+      "maker": "DeepSeek",
+      "contextWindow": 128000,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "openai/gpt-oss-120b",
+      "name": "GPT-OSS 120B",
+      "maker": "OpenAI",
+      "contextWindow": 128000,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "openai/gpt-oss-20b",
+      "name": "GPT-OSS 20B",
+      "maker": "OpenAI",
+      "contextWindow": 128000,
+      "maxOutputTokens": 8192,
+      "quantization": "MXFP4"
+    },
+    {
+      "id": "zai/glm-4.6",
+      "name": "GLM 4.6",
+      "maker": "Z.ai",
+      "contextWindow": 202752,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "zai/glm-4.5-air",
+      "name": "GLM 4.5 Air",
+      "maker": "Z.ai",
+      "contextWindow": 131072,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "qwen/qwen3-235b-a22b-thinking-2507",
+      "name": "Qwen3 235B-A22B Thinking 2507",
+      "maker": "Qwen",
+      "contextWindow": 262144,
+      "maxOutputTokens": 8192,
+      "isReasoningModel": true
+    },
+    {
+      "id": "qwen/qwen3-235b-a22b-instruct-2507",
+      "name": "Qwen3 235B-A22B Instruct 2507",
+      "maker": "Qwen",
+      "contextWindow": 262144,
+      "maxOutputTokens": 8192,
+      "quantization": "FP8"
+    },
+    {
+      "id": "qwen/qwen3-next-80b-a3b-instruct",
+      "name": "Qwen3-Next-80B-A3B-Instruct",
+      "maker": "Qwen",
+      "contextWindow": 262144,
+      "maxOutputTokens": 8192,
+      "quantization": "BF16"
+    },
+    {
+      "id": "qwen/qwen3-next-80b-a3b-thinking",
+      "name": "Qwen3-Next-80B-A3B-Thinking",
+      "maker": "Qwen",
+      "contextWindow": 262144,
+      "maxOutputTokens": 8192,
+      "isReasoningModel": true
+    },
+    {
+      "id": "deepseek/deepseek-r1",
+      "name": "DeepSeek-R1-0528",
+      "maker": "DeepSeek",
+      "contextWindow": 163839,
+      "maxOutputTokens": 8192,
+      "isReasoningModel": true
+    },
+    {
+      "id": "deepseek/deepseek-v3",
+      "name": "DeepSeek-V3-0324",
+      "maker": "DeepSeek",
+      "contextWindow": 163839,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "meta/llama-4-maverick",
+      "name": "Llama 4 Maverick (17Bx128E)",
+      "maker": "Meta",
+      "contextWindow": 1048576,
+      "maxOutputTokens": 16384
+    },
+    {
+      "id": "meta/llama-4-scout",
+      "name": "Llama 4 Scout (17Bx16E)",
+      "maker": "Meta",
+      "contextWindow": 1048576,
+      "maxOutputTokens": 16384
+    },
+    {
+      "id": "meta/llama-3.3-70b-instruct-turbo",
+      "name": "Llama 3.3 70B Instruct Turbo",
+      "maker": "Meta",
+      "contextWindow": 131072,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "deepcogito/cogito-v2-preview-70b",
+      "name": "Cogito v2 Preview 70B",
+      "maker": "Deep Cogito",
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "deepcogito/cogito-v2-preview-109b-moe",
+      "name": "Cogito v2 Preview 109B MoE",
+      "maker": "Deep Cogito",
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "deepcogito/cogito-v2-preview-405b",
+      "name": "Cogito v2 Preview 405B",
+      "maker": "Deep Cogito",
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "deepcogito/cogito-v2.1-671b",
+      "name": "Cogito v2.1 671B",
+      "maker": "Deep Cogito",
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "mistral/magistral-small-2506",
+      "name": "Magistral Small 2506 API",
+      "maker": "Mistral AI",
+      "contextWindow": 40960,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "mistral/ministral-3-14b-instruct-2512",
+      "name": "Ministral 3 14B Instruct 2512",
+      "maker": "Mistral AI",
+      "contextWindow": 262144,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "essentialai/rnj-1-instruct",
+      "name": "Rnj-1 Instruct",
+      "maker": "Essential AI",
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "mistral/mistral-small-24b-instruct-2501",
+      "name": "Mistral Small 3 Instruct (24B)",
+      "maker": "Mistral AI",
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "meta/llama-3.1-8b-instruct-turbo",
+      "name": "Llama 3.1 8B Instruct Turbo",
+      "maker": "Meta",
+      "contextWindow": 131072,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "qwen/qwen2.5-7b-instruct-turbo",
+      "name": "Qwen 2.5 7B Instruct Turbo",
+      "maker": "Qwen",
+      "contextWindow": 32768,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "qwen/qwen2.5-72b-instruct-turbo",
+      "name": "Qwen 2.5 72B Instruct Turbo",
+      "maker": "Qwen",
+      "contextWindow": 32768,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "qwen/qwen2.5-vl-72b-instruct",
+      "name": "Qwen2.5 Vision Language 72B Instruct",
+      "maker": "Qwen",
+      "contextWindow": 32768,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "qwen/qwen3-235b-a22b-fp8-tput",
+      "name": "Qwen3 235B A22B Throughput",
+      "maker": "Qwen",
+      "contextWindow": 40960,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "meta/llama-3.1-405b-instruct-turbo",
+      "name": "Llama 3.1 405B Instruct Turbo",
+      "maker": "Meta",
+      "contextWindow": 130815,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "meta/llama-3.2-3b-instruct-turbo",
+      "name": "Llama 3.2 3B Instruct Turbo",
+      "maker": "Meta",
+      "contextWindow": 131072,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "meta/llama-3-8b-instruct-lite",
+      "name": "Llama 3 8B Instruct Lite",
+      "maker": "Meta",
+      "contextWindow": 8192,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "meta/llama-3-70b-chat-hf",
+      "name": "Llama 3 70B Instruct Reference",
+      "maker": "Meta",
+      "contextWindow": 8192,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "google/gemma-2b-it",
+      "name": "Gemma Instruct (2B)",
+      "maker": "Google",
+      "contextWindow": 8192,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "google/gemma-3n-e4b-it",
+      "name": "Gemma 3N E4B Instruct",
+      "maker": "Google",
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "gryphe/mythomax-l2-13b",
+      "name": "MythoMax-L2 (13B)",
+      "maker": "Gryphe",
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "mistral/mistral-7b-instruct-v0.2",
+      "name": "Mistral (7B) Instruct v0.2",
+      "maker": "Mistral AI",
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "mistral/mistral-7b-instruct-v0.3",
+      "name": "Mistral (7B) Instruct v0.3",
+      "maker": "Mistral AI",
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "nvidia/nemotron-nano-9b-v2",
+      "name": "Nemotron Nano 9B v2",
+      "maker": "NVIDIA",
+      "contextWindow": 131072,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "arcee/trinity-mini",
+      "name": "Arcee AI Trinity Mini",
+      "maker": "Arcee",
+      "contextWindow": 32768,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "marin/marin-8b-instruct",
+      "name": "Marin 8B Instruct",
+      "maker": "Marin Community",
+      "contextWindow": 4096,
+      "maxOutputTokens": 4096
+    },
+    {
+      "id": "qwen/qwen3-vl-32b-instruct",
+      "name": "Qwen3-VL-32B-Instruct",
+      "maker": "Qwen",
+      "contextWindow": 256000,
+      "maxOutputTokens": 8192
+    },
+    {
+      "id": "qwen/qwen3-vl-8b-instruct",
+      "name": "Qwen3-VL-8B-Instruct",
+      "maker": "Qwen",
+      "contextWindow": 262100,
+      "maxOutputTokens": 8192
+    }
+  ],
   "providers": [
     {
       "id": "togetherai",
@@ -435,6 +1017,88 @@
         { "modelId": "lykon/dreamshaper", "providerModelId": "Lykon/DreamShaper" },
         { "modelId": "stabilityai/stable-diffusion-xl-base-1.0", "providerModelId": "stabilityai/stable-diffusion-xl-base-1.0" },
         { "modelId": "stabilityai/stable-diffusion-3-medium", "providerModelId": "stabilityai/stable-diffusion-3-medium" }
+      ],
+      "textModels": [
+        { "modelId": "moonshot/kimi-k2-instruct-0905", "providerModelId": "moonshotai/Kimi-K2-Instruct-0905" },
+        { "modelId": "moonshot/kimi-k2-thinking", "providerModelId": "moonshotai/Kimi-K2-Thinking" },
+        { "modelId": "moonshot/kimi-k2-instruct", "providerModelId": "moonshotai/Kimi-K2-Instruct" },
+        { "modelId": "deepseek/deepseek-v3.1", "providerModelId": "deepseek-ai/DeepSeek-V3.1" },
+        { "modelId": "openai/gpt-oss-120b", "providerModelId": "openai/gpt-oss-120b" },
+        { "modelId": "openai/gpt-oss-20b", "providerModelId": "openai/gpt-oss-20b" },
+        { "modelId": "zai/glm-4.6", "providerModelId": "zai-org/GLM-4.6" },
+        { "modelId": "zai/glm-4.5-air", "providerModelId": "zai-org/GLM-4.5-Air-FP8" },
+        { "modelId": "qwen/qwen3-235b-a22b-thinking-2507", "providerModelId": "Qwen/Qwen3-235B-A22B-Thinking-2507" },
+        { "modelId": "qwen/qwen3-235b-a22b-instruct-2507", "providerModelId": "Qwen/Qwen3-235B-A22B-Instruct-2507-tput" },
+        { "modelId": "qwen/qwen3-next-80b-a3b-instruct", "providerModelId": "Qwen/Qwen3-Next-80B-A3B-Instruct" },
+        { "modelId": "qwen/qwen3-next-80b-a3b-thinking", "providerModelId": "Qwen/Qwen3-Next-80B-A3B-Thinking" },
+        { "modelId": "deepseek/deepseek-r1", "providerModelId": "deepseek-ai/DeepSeek-R1" },
+        { "modelId": "deepseek/deepseek-v3", "providerModelId": "deepseek-ai/DeepSeek-V3" },
+        { "modelId": "meta/llama-4-maverick", "providerModelId": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8" },
+        { "modelId": "meta/llama-4-scout", "providerModelId": "meta-llama/Llama-4-Scout-17B-16E-Instruct" },
+        { "modelId": "meta/llama-3.3-70b-instruct-turbo", "providerModelId": "meta-llama/Llama-3.3-70B-Instruct-Turbo" },
+        { "modelId": "deepcogito/cogito-v2-preview-70b", "providerModelId": "deepcogito/cogito-v2-preview-llama-70B" },
+        { "modelId": "deepcogito/cogito-v2-preview-109b-moe", "providerModelId": "deepcogito/cogito-v2-preview-llama-109B-MoE" },
+        { "modelId": "deepcogito/cogito-v2-preview-405b", "providerModelId": "deepcogito/cogito-v2-preview-llama-405B" },
+        { "modelId": "deepcogito/cogito-v2.1-671b", "providerModelId": "deepcogito/cogito-v2-1-671b" },
+        { "modelId": "mistral/magistral-small-2506", "providerModelId": "mistralai/Magistral-Small-2506" },
+        { "modelId": "mistral/ministral-3-14b-instruct-2512", "providerModelId": "mistralai/Ministral-3-14B-Instruct-2512" },
+        { "modelId": "essentialai/rnj-1-instruct", "providerModelId": "essentialai/rnj-1-instruct" },
+        { "modelId": "mistral/mistral-small-24b-instruct-2501", "providerModelId": "mistralai/Mistral-Small-24B-Instruct-2501" },
+        { "modelId": "meta/llama-3.1-8b-instruct-turbo", "providerModelId": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo" },
+        { "modelId": "qwen/qwen2.5-7b-instruct-turbo", "providerModelId": "Qwen/Qwen2.5-7B-Instruct-Turbo" },
+        { "modelId": "qwen/qwen2.5-72b-instruct-turbo", "providerModelId": "Qwen/Qwen2.5-72B-Instruct-Turbo" },
+        { "modelId": "qwen/qwen2.5-vl-72b-instruct", "providerModelId": "Qwen/Qwen2.5-VL-72B-Instruct" },
+        { "modelId": "qwen/qwen3-235b-a22b-fp8-tput", "providerModelId": "Qwen/Qwen3-235B-A22B-fp8-tput" },
+        { "modelId": "meta/llama-3.1-405b-instruct-turbo", "providerModelId": "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo" },
+        { "modelId": "meta/llama-3.2-3b-instruct-turbo", "providerModelId": "meta-llama/Llama-3.2-3B-Instruct-Turbo" },
+        { "modelId": "meta/llama-3-8b-instruct-lite", "providerModelId": "meta-llama/Meta-Llama-3-8B-Instruct-Lite" },
+        { "modelId": "meta/llama-3-70b-chat-hf", "providerModelId": "meta-llama/Llama-3-70b-chat-hf" },
+        { "modelId": "google/gemma-2b-it", "providerModelId": "google/gemma-2b-it" },
+        { "modelId": "google/gemma-3n-e4b-it", "providerModelId": "google/gemma-3n-E4B-it" },
+        { "modelId": "gryphe/mythomax-l2-13b", "providerModelId": "Gryphe/MythoMax-L2-13b" },
+        { "modelId": "mistral/mistral-7b-instruct-v0.2", "providerModelId": "mistralai/Mistral-7B-Instruct-v0.2" },
+        { "modelId": "mistral/mistral-7b-instruct-v0.3", "providerModelId": "mistralai/Mistral-7B-Instruct-v0.3" },
+        { "modelId": "nvidia/nemotron-nano-9b-v2", "providerModelId": "nvidia/NVIDIA-Nemotron-Nano-9B-v2" },
+        { "modelId": "arcee/trinity-mini", "providerModelId": "arcee-ai/trinity-mini" },
+        { "modelId": "marin/marin-8b-instruct", "providerModelId": "marin-community/marin-8b-instruct" },
+        { "modelId": "qwen/qwen3-vl-32b-instruct", "providerModelId": "Qwen/Qwen3-VL-32B-Instruct" },
+        { "modelId": "qwen/qwen3-vl-8b-instruct", "providerModelId": "Qwen/Qwen3-VL-8B-Instruct" }
+      ]
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "textModels": [
+        { "modelId": "openai/gpt-5.2", "providerModelId": "gpt-5.2" },
+        { "modelId": "openai/gpt-5.2-pro", "providerModelId": "gpt-5.2-pro" },
+        { "modelId": "openai/gpt-5.2-chat-latest", "providerModelId": "gpt-5.2-chat-latest" },
+        { "modelId": "openai/gpt-5.1", "providerModelId": "gpt-5.1" },
+        { "modelId": "openai/gpt-5.1-codex", "providerModelId": "gpt-5.1-codex" },
+        { "modelId": "openai/gpt-5", "providerModelId": "gpt-5" },
+        { "modelId": "openai/gpt-5-mini", "providerModelId": "gpt-5-mini" },
+        { "modelId": "openai/gpt-5-nano", "providerModelId": "gpt-5-nano" },
+        { "modelId": "openai/gpt-4.1", "providerModelId": "gpt-4.1" },
+        { "modelId": "openai/gpt-4.1-mini", "providerModelId": "gpt-4.1-mini" },
+        { "modelId": "openai/gpt-4.1-nano", "providerModelId": "gpt-4.1-nano" },
+        { "modelId": "openai/gpt-4o", "providerModelId": "gpt-4o" },
+        { "modelId": "openai/gpt-4o-mini", "providerModelId": "gpt-4o-mini" },
+        { "modelId": "openai/o3", "providerModelId": "o3" },
+        { "modelId": "openai/o3-mini", "providerModelId": "o3-mini" },
+        { "modelId": "openai/o3-pro", "providerModelId": "o3-pro" },
+        { "modelId": "openai/o4-mini", "providerModelId": "o4-mini" },
+        { "modelId": "openai/o3-deep-research", "providerModelId": "o3-deep-research" },
+        { "modelId": "openai/o4-mini-deep-research", "providerModelId": "o4-mini-deep-research" },
+        { "modelId": "openai/o1", "providerModelId": "o1" },
+        { "modelId": "openai/o1-pro", "providerModelId": "o1-pro" },
+        { "modelId": "openai/gpt-oss-120b", "providerModelId": "gpt-oss-120b" },
+        { "modelId": "openai/gpt-oss-20b", "providerModelId": "gpt-oss-20b" }
+      ],
+      "imageModels": [
+        { "modelId": "openai/gpt-image-1.5", "providerModelId": "gpt-image-1.5" },
+        { "modelId": "openai/gpt-image-1", "providerModelId": "gpt-image-1" },
+        { "modelId": "openai/gpt-image-1-mini", "providerModelId": "gpt-image-1-mini" },
+        { "modelId": "openai/dall-e-3", "providerModelId": "dall-e-3" },
+        { "modelId": "openai/dall-e-2", "providerModelId": "dall-e-2" }
       ]
     }
   ],
