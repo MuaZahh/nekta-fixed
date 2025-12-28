@@ -1,6 +1,6 @@
 import { Player } from '@remotion/player'
 import { StitchingState } from '@remotion/renderer'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { flushSync } from 'react-dom'
 import {
   SparkleIcon,
@@ -23,16 +23,16 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { getModels, ModelResult } from '@/lib/modelHelpers'
+import { getModels, ModelResult, GetModelsResult } from '@/lib/modelHelpers'
 import { ArtStyles } from '@/data/contentStyles'
-import { AspectRatio } from '@/type/content'
 import { VoiceSelect } from '@/components/shared/VoiceSelect'
 import { ArtStyleSelect } from '@/components/shared/ArtStyleSelect'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { AiVideoSlideType } from './ai-video/types'
 import { SlideItem } from './ai-video/AIVideoSlide'
 import { Section } from '@/components/shared/Section'
-import { OpenAIStructuredGenProvider, OpenAITTSProvider } from '@/lib/providers/openAI'
+import { OpenAIStructuredGenProvider, OpenAITTSProvider, OpenAIImageGenProvider } from '@/lib/providers/openAI'
+import { useSettingsStore } from '@/state/settings'
 import { getGenerateImageDescriptionPrompt, getGenerateStoryPrompt, StoryScript, StoryWithImages, createTimelineFromSlides } from './ai-video/service'
 import { AIVideo, aiVideoSchema } from '@/remotion/templates/ai-video-basic/AIVideo'
 import { Timeline } from '@/remotion/templates/ai-video-basic/types'
@@ -42,7 +42,7 @@ import { GenerateStoryModal } from './ai-video/GenerateStoryModal'
 import Chrome from '@uiw/react-color-chrome'
 
 
-const supportedRatios: AspectRatio[] = ['9:16']
+const ASPECT_RATIO = '9:16'
 const DEFAULT_ART_STYLE = 'realism'
 const DEFAULT_ART_STYLE_DESC = ArtStyles.find((s) => s.uid === DEFAULT_ART_STYLE)?.description || ''
 
@@ -91,6 +91,24 @@ const generateStory = async (
 
 export const AIVideoPage = () => {
   const setRoute = useRouter((state) => state.setRoute)
+  const apiKeys = useSettingsStore((state) => state.apiKeys)
+  const connectedProviders = useMemo(() => {
+    return Object.entries(apiKeys)
+      .filter(([, value]) => value && value.length > 0)
+      .map(([key]) => key)
+  }, [apiKeys])
+
+  const enabledModelsData = useMemo(() => {
+    const allModelsData = getModels({ ratios: [ASPECT_RATIO] })
+    const result: GetModelsResult = {}
+    for (const [providerId, providerData] of Object.entries(allModelsData)) {
+      if (connectedProviders.includes(providerId)) {
+        result[providerId] = providerData
+      }
+    }
+    return result
+  }, [connectedProviders])
+
   const [slides, setSlides] = useState<AiVideoSlideType[]>([])
   const [wizardOpen, setWizardOpen] = useState(false)
   const [isRendering, setIsRendering] = useState(false)
@@ -98,10 +116,17 @@ export const AIVideoPage = () => {
   const [renderError, setRenderError] = useState<RenderError | null>(null)
 
   const [voice, setVoice] = useState<string>('alloy')
-  const [aspectRatio, setAspectRatio] = useState<string>('9:16')
-  const [imageModel, setImageModel] = useState<string>(
-    'qwen/qwen-image'
-  )
+  const [imageModel, setImageModel] = useState<string>('')
+
+  useEffect(() => {
+    const allModels = Object.values(enabledModelsData).flatMap(p => p.models)
+    const isCurrentModelValid = allModels.some(m => m.modelId === imageModel)
+
+    if (!isCurrentModelValid && allModels.length > 0) {
+      setImageModel(allModels[0].modelId)
+    }
+  }, [enabledModelsData, imageModel])
+
   const [artStyle, setArtStyle] = useState<string>(DEFAULT_ART_STYLE)
   const [artStyleDesc, setArtStyleDesc] = useState<string>(DEFAULT_ART_STYLE_DESC)
   const [primaryColor, setPrimaryColor] = useState<string>('#ffff00')
@@ -227,10 +252,22 @@ export const AIVideoPage = () => {
     const slide = slides.find((s) => s.uid === uid)
     if (!slide) return
 
-    const modelsResult = getModels({ ratios: supportedRatios })
-    const togetherModels = modelsResult['togetherai']?.models || []
-    const selectedModel = togetherModels.find(m => m.modelId === imageModel)
-    if (!selectedModel) {
+    const modelsResult = getModels({ ratios: [ASPECT_RATIO] })
+
+    let selectedModel: ModelResult | undefined
+    let selectedProviderId: string | undefined
+
+    for (const [providerId, providerData] of Object.entries(modelsResult)) {
+      const model = providerData.models.find(m => m.modelId === imageModel)
+      if (model) {
+        selectedModel = model
+        selectedProviderId = providerId
+        break
+      }
+    }
+
+    if (!selectedModel || !selectedProviderId) {
+      console.error('Model not found:', imageModel)
       return
     }
 
@@ -242,8 +279,17 @@ export const AIVideoPage = () => {
       return
     }
 
-    const p = new TogetherAIImageGenProvider()
-    const img = await p.generate(selectedModel, '9:16', prompt)
+    let img
+    if (selectedProviderId === 'openai') {
+      const p = new OpenAIImageGenProvider()
+      img = await p.generate(selectedModel, ASPECT_RATIO, prompt)
+    } else if (selectedProviderId === 'togetherai') {
+      const p = new TogetherAIImageGenProvider()
+      img = await p.generate(selectedModel, ASPECT_RATIO, prompt)
+    } else {
+      console.error('Unknown provider:', selectedProviderId)
+      return
+    }
 
     const saveResult = await window.ipcRenderer.invoke('SAVE_GENERATED_IMAGE', {
       base64Data: img.base64Data,
@@ -371,9 +417,6 @@ export const AIVideoPage = () => {
     setTitle(storyTitle)
   }
 
-  const modelsData = getModels({ ratios: supportedRatios })
-  const filteredModels: ModelResult[] = modelsData['togetherai']?.models || []
-  
   return (
     <div className="flex flex-col h-full w-full">
       <PageHeader title="AI Video" />
@@ -389,45 +432,6 @@ export const AIVideoPage = () => {
               <div className="flex flex-col gap-2">
                 <Label>Voice</Label>
                 <VoiceSelect value={voice} onChange={setVoice} />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label>Aspect Ratio</Label>
-                <Select value={aspectRatio} onValueChange={setAspectRatio}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {supportedRatios.map((r) => (
-                        <SelectItem key={r} value={r}>
-                          {r}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <Label>Image Model</Label>
-                <Select value={imageModel} onValueChange={setImageModel}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Together AI</SelectLabel>
-                      {filteredModels.map((m) => (
-                        <SelectItem key={m.modelId} value={m.modelId}>
-                          {m.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="flex flex-col gap-2">
@@ -455,6 +459,32 @@ export const AIVideoPage = () => {
                   )}
                 </div>
               </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>Image Model</Label>
+              <Select value={imageModel} onValueChange={setImageModel}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(enabledModelsData).map(([providerId, providerData]) => (
+                    <SelectGroup key={providerId}>
+                      <SelectLabel>{providerData.providerName}</SelectLabel>
+                      {providerData.models.map((m) => (
+                        <SelectItem key={m.modelId} value={m.modelId}>
+                          {m.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+                  {Object.keys(enabledModelsData).length === 0 && (
+                    <SelectGroup>
+                      <SelectLabel className="text-neutral-400">No providers configured</SelectLabel>
+                    </SelectGroup>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -528,7 +558,7 @@ export const AIVideoPage = () => {
               style={{
                 width: '100%',
                 maxHeight: '100%',
-                aspectRatio: aspectRatio.replace(':', '/'),
+                aspectRatio: ASPECT_RATIO.replace(':', '/'),
                 borderRadius: 12,
                 overflow: 'hidden',
               }}
@@ -543,7 +573,7 @@ export const AIVideoPage = () => {
               className="w-full bg-neutral-100 border rounded-xl flex items-center justify-center"
               style={{
                 maxHeight: '100%',
-                aspectRatio: aspectRatio.replace(':', '/'),
+                aspectRatio: ASPECT_RATIO.replace(':', '/'),
               }}
             >
               <VideoCameraIcon size={48} className="text-neutral-300" />
