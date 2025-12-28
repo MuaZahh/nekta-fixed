@@ -23,7 +23,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ImageGenModelsData } from '@/providers/replicate/images'
+import { getModels, ModelResult } from '@/lib/modelHelpers'
 import { ArtStyles } from '@/data/contentStyles'
 import { AspectRatio } from '@/type/content'
 import { VoiceSelect } from '@/components/shared/VoiceSelect'
@@ -37,7 +37,7 @@ import { getGenerateImageDescriptionPrompt, getGenerateStoryPrompt, StoryScript,
 import { AIVideo, aiVideoSchema } from '@/remotion/templates/ai-video-basic/AIVideo'
 import { Timeline } from '@/remotion/templates/ai-video-basic/types'
 import { FPS, INTRO_DURATION } from '@/remotion/constants'
-import { ReplicateImageGenProvider } from '@/lib/providers/replicate'
+import { TogetherAIImageGenProvider } from '@/lib/providers/togetherAI'
 import { GenerateStoryModal } from './ai-video/GenerateStoryModal'
 import Chrome from '@uiw/react-color-chrome'
 
@@ -100,7 +100,7 @@ export const AIVideoPage = () => {
   const [voice, setVoice] = useState<string>('alloy')
   const [aspectRatio, setAspectRatio] = useState<string>('9:16')
   const [imageModel, setImageModel] = useState<string>(
-    'black-forest-labs/flux-schnell'
+    'qwen/qwen-image'
   )
   const [artStyle, setArtStyle] = useState<string>(DEFAULT_ART_STYLE)
   const [artStyleDesc, setArtStyleDesc] = useState<string>(DEFAULT_ART_STYLE_DESC)
@@ -227,7 +227,9 @@ export const AIVideoPage = () => {
     const slide = slides.find((s) => s.uid === uid)
     if (!slide) return
 
-    const selectedModel = ImageGenModelsData.map(g => g.models).flat().find(m => m.id === imageModel)
+    const modelsResult = getModels({ ratios: supportedRatios })
+    const togetherModels = modelsResult['togetherai']?.models || []
+    const selectedModel = togetherModels.find(m => m.modelId === imageModel)
     if (!selectedModel) {
       return
     }
@@ -240,7 +242,7 @@ export const AIVideoPage = () => {
       return
     }
 
-    const p = new ReplicateImageGenProvider()
+    const p = new TogetherAIImageGenProvider()
     const img = await p.generate(selectedModel, '9:16', prompt)
 
     const saveResult = await window.ipcRenderer.invoke('SAVE_GENERATED_IMAGE', {
@@ -369,11 +371,8 @@ export const AIVideoPage = () => {
     setTitle(storyTitle)
   }
 
-  const filteredModels = ImageGenModelsData.flatMap((provider) =>
-    provider.models.filter((model) =>
-      supportedRatios.every((ratio) => model.aspectRatios.includes(ratio))
-    )
-  )
+  const modelsData = getModels({ ratios: supportedRatios })
+  const filteredModels: ModelResult[] = modelsData['togetherai']?.models || []
   
   return (
     <div className="flex flex-col h-full w-full">
@@ -420,10 +419,10 @@ export const AIVideoPage = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectLabel>Replicate</SelectLabel>
+                      <SelectLabel>Together AI</SelectLabel>
                       {filteredModels.map((m) => (
-                        <SelectItem key={m.id} value={m.id}>
-                          {m.name} (${(m.price / 100).toFixed(3)})
+                        <SelectItem key={m.modelId} value={m.modelId}>
+                          {m.name}
                         </SelectItem>
                       ))}
                     </SelectGroup>

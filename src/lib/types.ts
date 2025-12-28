@@ -12,6 +12,8 @@ export const aiProviderToLabel = (provider: AIProviderType) => {
       return 'Gemini'
     case 'openai':
       return 'OpenAI'
+    case 'togetherai':
+      return 'Together AI'
   }
 }
 

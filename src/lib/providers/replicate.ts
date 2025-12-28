@@ -2,7 +2,8 @@ import { useSettingsStore } from "@/state/settings"
 import { ImageGenProvider, ImageGenResult } from "../types"
 import { AspectRatio, ImagGenModelMeta } from "@/type/content"
 import { delay, urlToBase64 } from "../utils"
-import { ReplicateDefaultOutputTransformer } from "@/providers/replicate/images"
+
+const ReplicateDefaultOutputTransformer = (output: unknown) => Object.values(output as object)
 
 type FetchProxyResponse = {
   ok: boolean
