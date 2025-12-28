@@ -12,6 +12,7 @@ import openaiIcon from '@/assets/icons/openai-logo.svg'
 import elevenLabsIcon from '@/assets/icons/elevenlabs-logo.svg'
 import replicateIcon from '@/assets/icons/replicat_icon.svg'
 import geminiIcon from '@/assets/icons/gemini.svg'
+import togetherIcon from '@/assets/icons/together-color.svg'
 
 type ApiKeyDataItem = {
   name: string
@@ -28,6 +29,12 @@ const apiKeyData: ApiKeyDataItem[] = [
     iconSize: 24,
   },
   {
+    name: 'Together.AI',
+    type: 'togetherai',
+    icon: togetherIcon,
+    iconSize: 18,
+  },
+  {
     name: 'ElevenLabs',
     type: 'elevenlabs',
     icon: elevenLabsIcon,
@@ -37,7 +44,7 @@ const apiKeyData: ApiKeyDataItem[] = [
     name: 'Replicate',
     type: 'replicate',
     icon: replicateIcon,
-    iconSize: 20,
+    iconSize: 18,
   },
   {
     name: 'Gemini',
@@ -67,6 +74,7 @@ export const SettingsPage = () => {
     elevenlabs: false,
     replicate: false,
     gemini: false,
+    togetherai: false
   })
   const [cacheStats, setCacheStats] = useState<CacheStats>({ fileCount: 0, totalSize: 0 })
   const [isClearing, setIsClearing] = useState(false)
@@ -115,12 +123,14 @@ export const SettingsPage = () => {
               {apiKeyData.map((item) => (
                 <div key={item.type} className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
-                    <img
-                      src={item.icon}
-                      width={item.iconSize}
-                      height={item.iconSize}
-                      alt={item.name}
-                    />
+                    <div className='flex items-center justify-center w-6 h-6'>
+                      <img
+                        src={item.icon}
+                        width={item.iconSize}
+                        height={item.iconSize}
+                        alt={item.name}
+                      />
+                    </div>
                     <Label>{item.name}</Label>
                   </div>
                   <div className="relative">

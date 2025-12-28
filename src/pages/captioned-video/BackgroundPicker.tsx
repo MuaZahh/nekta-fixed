@@ -1,20 +1,18 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { PlayIcon, CheckIcon, ArrowsOutIcon, CircleNotchIcon, CloudArrowDownIcon } from '@phosphor-icons/react'
 import { BackgroundVideo } from './types'
 import { MediaPreview } from '@/components/shared/MediaPreview'
 import { useCaptionedVideoStore } from './store'
 import { useContentStore, MediaContentItem } from '@/lib/contentManager'
 
-const contentItemToBackground = (item: MediaContentItem): BackgroundVideo => ({
-  uid: item.uid,
-  name: item.name || item.tags?.join(', ') || 'Background',
-  url: item.mediaUrl || item.url,
-  thumbnailUrl: item.mediaUrl || item.url,
-  durationMs: 30000,
-})
+const getHttpUrl = (localPath: string | null, port: number | null): string => {
+  if (!localPath || !port) return ''
+  return `http://127.0.0.1:${port}/?path=${encodeURIComponent(localPath)}`
+}
 
 export const BackgroundPicker = () => {
   const [previewVideo, setPreviewVideo] = useState<BackgroundVideo | null>(null)
+  const [mediaServerPort, setMediaServerPort] = useState<number | null>(null)
 
   const selectedBackground = useCaptionedVideoStore((s) => s.selectedBackground)
   const setSelectedBackground = useCaptionedVideoStore((s) => s.setSelectedBackground)
@@ -24,11 +22,24 @@ export const BackgroundPicker = () => {
   const isLoading = useContentStore((s) => s.isLoading)
   const items = useContentStore((s) => s.items)
 
+  useEffect(() => {
+    window.ipcRenderer.invoke('GET_MEDIA_SERVER_PORT').then(setMediaServerPort)
+  }, [])
+
   const backgroundVideos = useMemo(() => {
     return items
       .filter((item) => item.type === 'video' && item.category === 'background' && item.isDownloaded)
-      .map(contentItemToBackground)
-  }, [items])
+      .map((item): BackgroundVideo => {
+        const httpUrl = getHttpUrl(item.localPath, mediaServerPort)
+        return {
+          uid: item.uid,
+          name: item.name || item.tags?.join(', ') || 'Background',
+          url: httpUrl || item.url,
+          thumbnailUrl: httpUrl || item.url,
+          durationMs: 30000,
+        }
+      })
+  }, [items, mediaServerPort])
 
   const pendingCount = useMemo(() => {
     return items.filter(

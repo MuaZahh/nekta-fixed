@@ -1,5 +1,5 @@
 import { Player } from '@remotion/player'
-import { useEffect } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import {
   PlusIcon,
   DownloadSimpleIcon,
@@ -21,15 +21,59 @@ import { CaptionedVideoSlide } from './captioned-video/CaptionedVideoSlide'
 import { CharacterPickerModal } from './captioned-video/CharacterPickerModal'
 import { BackgroundPicker } from './captioned-video/BackgroundPicker'
 import { CaptionedVideo } from '@/remotion/templates/captioned-video/CaptionedVideo'
-import { CaptionedVideoTimeline, CaptionedVideoBackground } from '@/remotion/templates/captioned-video/types'
+import { CaptionedVideoTimeline, CaptionedVideoBackground, captionedVideoTimelineSchema } from '@/remotion/templates/captioned-video/types'
 import { OpenAITTSProvider } from '@/lib/providers/openAI'
 import { useCaptionedVideoStore } from './captioned-video/store'
+
+const transformMediaUrl = (url: string | undefined, port: number | null): string | undefined => {
+  if (!url || !port) return url
+  if (!url.startsWith('media://')) return url
+  const encodedPath = url.slice('media://'.length)
+  const filePath = decodeURIComponent(encodedPath)
+  return `http://127.0.0.1:${port}/?path=${encodeURIComponent(filePath)}`
+}
+
+const MemoizedPlayer = React.memo(({ timeline, durationInFrames, aspectRatio }: {
+  timeline: CaptionedVideoTimeline
+  durationInFrames: number
+  aspectRatio: string
+}) => {
+  console.log('>> PLAYER RENDER')
+  console.log(timeline)
+
+  return <Player
+    component={CaptionedVideo}
+    schema={captionedVideoTimelineSchema}
+    inputProps={timeline}
+    style={{
+      width: '100%',
+      maxHeight: '100%',
+      aspectRatio: aspectRatio.replace(':', '/'),
+      borderRadius: 12,
+      overflow: 'hidden',
+    }}
+    controls
+    compositionWidth={1080}
+    compositionHeight={1920}
+    fps={FPS}
+    durationInFrames={durationInFrames}
+  />
+}, (prev, next) => {
+  return JSON.stringify(prev.timeline) === JSON.stringify(next.timeline)
+    && prev.durationInFrames === next.durationInFrames
+    && prev.aspectRatio === next.aspectRatio
+})
 
 export const CaptionedVideoPage = () => {
   const setRoute = useRouter((state) => state.setRoute)
   const store = useCaptionedVideoStore()
+  const mediaServerPortRef = useRef<number | null>(null)
 
   useEffect(() => {
+    window.ipcRenderer.invoke('GET_MEDIA_SERVER_PORT').then((port) => {
+      mediaServerPortRef.current = port
+    })
+
     window.ipcRenderer.on('RENDER_PROGRESS', (_event, progress) => {
       store.setRenderProgress(progress)
     })
@@ -107,10 +151,11 @@ export const CaptionedVideoPage = () => {
     const currentSlides = useCaptionedVideoStore.getState().slides
     const currentBackground = useCaptionedVideoStore.getState().selectedBackground
     const currentPrimaryColor = useCaptionedVideoStore.getState().primaryColor
+    const port = mediaServerPortRef.current
 
     const backgrounds: CaptionedVideoBackground[] = currentBackground
       ? [{
-          type: 'image' as const,
+          type: 'video' as const,
           url: currentBackground.url,
           fromMs: 0,
           durationMs: currentBackground.durationMs,
@@ -131,7 +176,7 @@ export const CaptionedVideoPage = () => {
                   startMs: Math.round(wordStartTimestampSeconds[i] * 1000),
                   endMs: Math.round(wordEndTimestampSeconds[i] * 1000),
                 })),
-                audioUrl: slide.audioData.audioUrl,
+                audioUrl: transformMediaUrl(slide.audioData.audioUrl, port),
                 durationMs: slide.audioData.durationMs,
               },
             ],
@@ -327,21 +372,10 @@ export const CaptionedVideoPage = () => {
         <div className="w-[30%] flex-shrink-0 border-l border-neutral-100 p-3 flex flex-col items-center justify-center overflow-hidden gap-2">
           <Label>Preview</Label>
           {store.isPreviewGenerated && store.timeline && store.timeline.dialog.length > 0 ? (
-            <Player
-              component={CaptionedVideo}
-              inputProps={store.timeline}
-              style={{
-                width: '100%',
-                maxHeight: '100%',
-                aspectRatio: store.aspectRatio.replace(':', '/'),
-                borderRadius: 12,
-                overflow: 'hidden',
-              }}
-              controls
-              compositionWidth={1080}
-              compositionHeight={1920}
-              fps={FPS}
+            <MemoizedPlayer
+              timeline={store.timeline}
               durationInFrames={durationInFrames}
+              aspectRatio={store.aspectRatio}
             />
           ) : (
             <div

@@ -3,6 +3,7 @@ import { Audio, Video } from "@remotion/media";
 import Subtitle from "@/remotion/components/Subtitle";
 import { FPS } from "@/remotion/constants";
 import { CaptionedVideoTimeline, CaptionedVideoBackground } from "./types";
+import { useMemo } from "react";
 
 const MAX_WORDS_PER_LINE = 8;
 
@@ -28,11 +29,12 @@ const Background: React.FC<{ item: CaptionedVideoBackground }> = ({ item }) => {
 export const CaptionedVideo: React.FC<CaptionedVideoTimeline> = ({
   background, dialog, settings
 }) => {
-  const sortedBgs = [...background].sort((a, b) => a.fromMs - b.fromMs);
-  const totalBgDurationFrames = sortedBgs.reduce(
+  const sortedBgs = useMemo(() => [...background].sort((a, b) => a.fromMs - b.fromMs), [background]);
+  const totalBgDurationFrames = useMemo(() => sortedBgs.reduce(
     (sum, bg) => sum + Math.round((bg.durationMs / 1000) * FPS), 
     0
-  );
+  ), [sortedBgs])
+
   const BackgroundSequence = () => (
     <>
       {sortedBgs.map((bg, index) => {
@@ -59,12 +61,14 @@ export const CaptionedVideo: React.FC<CaptionedVideoTimeline> = ({
 
   return (
     <AbsoluteFill style={{ backgroundColor: "white" }}>
-      {settings.audioBasedDuration ? (
-        <Loop durationInFrames={totalBgDurationFrames}>
+      {totalBgDurationFrames > 0 && (
+        settings.audioBasedDuration ? (
+          <Loop durationInFrames={totalBgDurationFrames}>
+            <BackgroundSequence />
+          </Loop>
+        ) : (
           <BackgroundSequence />
-        </Loop>
-      ) : (
-        <BackgroundSequence />
+        )
       )}
 
       {dialog.map((dialogMessage, dialogIndex) => {

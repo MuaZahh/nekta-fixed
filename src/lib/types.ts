@@ -1,6 +1,6 @@
 import { AspectRatio, ImagGenModelMeta } from "@/type/content"
 import { z } from "zod"
-export type AIProviderType = 'openai' | 'elevenlabs' | 'replicate' | 'gemini'
+export type AIProviderType = 'openai' | 'elevenlabs' | 'replicate' | 'gemini' | 'togetherai'
 
 export const aiProviderToLabel = (provider: AIProviderType) => {
   switch (provider) {
