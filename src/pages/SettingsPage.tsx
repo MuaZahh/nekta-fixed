@@ -10,7 +10,6 @@ import { AIProviderType } from '@/lib/types'
 
 import openaiIcon from '@/assets/icons/openai-logo.svg'
 import elevenLabsIcon from '@/assets/icons/elevenlabs-logo.svg'
-import replicateIcon from '@/assets/icons/replicat_icon.svg'
 import geminiIcon from '@/assets/icons/gemini.svg'
 import togetherIcon from '@/assets/icons/together-color.svg'
 
@@ -41,12 +40,6 @@ const apiKeyData: ApiKeyDataItem[] = [
     iconSize: 24,
   },
   {
-    name: 'Replicate',
-    type: 'replicate',
-    icon: replicateIcon,
-    iconSize: 18,
-  },
-  {
     name: 'Gemini',
     type: 'gemini',
     icon: geminiIcon,
@@ -72,7 +65,6 @@ export const SettingsPage = () => {
   const [revealedKeys, setRevealedKeys] = useState<Record<AIProviderType, boolean>>({
     openai: false,
     elevenlabs: false,
-    replicate: false,
     gemini: false,
     togetherai: false
   })
