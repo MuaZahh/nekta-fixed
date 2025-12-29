@@ -13,13 +13,18 @@ import {
   PlayIcon,
   StopIcon,
 } from '@phosphor-icons/react'
+import { cn } from '@/lib/utils'
 
 export const VoiceSelect = ({
   value,
   onChange,
+  className,
+  compact = false,
 }: {
   value: string
   onChange: (value: string) => void
+  className?: string
+  compact?: boolean
 }) => {
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -69,8 +74,27 @@ export const VoiceSelect = ({
     onChange(newVoice)
   }
 
+  if (compact) {
+    return (
+      <Select value={value} onValueChange={handleVoiceChange}>
+        <SelectTrigger className={cn("text-xs", className)}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {voices.map((v) => (
+              <SelectItem key={v.id} value={v.id}>
+                {v.name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    )
+  }
+
   return (
-    <div className="flex gap-2">
+    <div className={cn("flex gap-2", className)}>
       <Select value={value} onValueChange={handleVoiceChange}>
         <SelectTrigger className="flex-1">
           <SelectValue />

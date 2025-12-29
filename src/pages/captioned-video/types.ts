@@ -3,8 +3,10 @@ export type CharacterMode = 'none' | 'custom'
 export interface CaptionedVideoSlideType {
   uid: string
   text: string
+  voice: string
   characterMode: CharacterMode
   characterImageUrl?: string
+  imageUrl?: string
   audioData?: {
     audioUrl: string
     durationMs: number

@@ -40,6 +40,7 @@ export type WordTimestamp = z.infer<typeof wordTimestampSchema>
 
 export const dialogMessageSchema = z.object({
   speaker: captionedVideoSpeakerTypeSchema,
+  imageUrl: z.string().optional(),
   message: z.array(z.object({
     words: z.array(wordTimestampSchema),
     audioUrl: z.string().url().optional(),

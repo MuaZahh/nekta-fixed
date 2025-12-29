@@ -33,7 +33,7 @@ type State = {
   selectedBackground: BackgroundVideo | null
 
   // Settings
-  voice: string
+  defaultVoice: string
   aspectRatio: string
   primaryColor: string
 
@@ -47,6 +47,7 @@ type State = {
   timeline: CaptionedVideoTimeline | null
   previewGenerating: boolean
   previewProgress: PreviewProgress | null
+  previewError: string | null
 
   // Render state
   isRendering: boolean
@@ -59,8 +60,10 @@ type Actions = {
   addSlide: () => void
   deleteSlide: (uid: string) => void
   updateSlideText: (uid: string, text: string) => void
+  updateSlideVoice: (uid: string, voice: string) => void
   updateSlideCharacterMode: (uid: string, mode: CharacterMode) => void
   updateSlideCharacterImage: (uid: string, imageUrl: string) => void
+  updateSlideImage: (uid: string, imageUrl: string | undefined) => void
   updateSlideAudioData: (uid: string, audioData: CaptionedVideoSlideType['audioData'], textHash: string) => void
   getSlide: (uid: string) => CaptionedVideoSlideType | undefined
 
@@ -69,7 +72,7 @@ type Actions = {
   clearSelectedBackground: () => void
 
   // Settings actions
-  setVoice: (voice: string) => void
+  setDefaultVoice: (voice: string) => void
   setPrimaryColor: (color: string) => void
 
   // UI actions
@@ -82,6 +85,7 @@ type Actions = {
   setPreviewGenerating: (generating: boolean) => void
   setIsPreviewGenerated: (generated: boolean) => void
   setPreviewProgress: (progress: PreviewProgress | null) => void
+  setPreviewError: (error: string | null) => void
   incrementPreviewProgress: () => void
 
   // Render actions
@@ -96,7 +100,7 @@ type Actions = {
 const initialState: State = {
   slides: [],
   selectedBackground: null,
-  voice: 'alloy',
+  defaultVoice: 'alloy',
   aspectRatio: '9:16',
   primaryColor: '#ffff00',
   colorPickerOpen: false,
@@ -106,6 +110,7 @@ const initialState: State = {
   timeline: null,
   previewGenerating: false,
   previewProgress: null,
+  previewError: null,
   isRendering: false,
   renderProgress: null,
   renderError: null,
@@ -121,6 +126,7 @@ export const useCaptionedVideoStore = create<State & Actions>()(
         state.slides.push({
           uid: crypto.randomUUID(),
           text: '',
+          voice: state.defaultVoice,
           characterMode: 'none',
         })
       }),
@@ -135,6 +141,14 @@ export const useCaptionedVideoStore = create<State & Actions>()(
         const slide = state.slides.find((s) => s.uid === uid)
         if (slide) {
           slide.text = text
+        }
+      }),
+
+    updateSlideVoice: (uid: string, voice: string) =>
+      set((state) => {
+        const slide = state.slides.find((s) => s.uid === uid)
+        if (slide) {
+          slide.voice = voice
         }
       }),
 
@@ -154,6 +168,14 @@ export const useCaptionedVideoStore = create<State & Actions>()(
         const slide = state.slides.find((s) => s.uid === uid)
         if (slide) {
           slide.characterImageUrl = imageUrl
+        }
+      }),
+
+    updateSlideImage: (uid: string, imageUrl: string | undefined) =>
+      set((state) => {
+        const slide = state.slides.find((s) => s.uid === uid)
+        if (slide) {
+          slide.imageUrl = imageUrl
         }
       }),
 
@@ -182,9 +204,9 @@ export const useCaptionedVideoStore = create<State & Actions>()(
       }),
 
     // Settings actions
-    setVoice: (voice: string) =>
+    setDefaultVoice: (voice: string) =>
       set((state) => {
-        state.voice = voice
+        state.defaultVoice = voice
       }),
 
     setPrimaryColor: (color: string) =>
@@ -229,6 +251,11 @@ export const useCaptionedVideoStore = create<State & Actions>()(
     setPreviewProgress: (progress: PreviewProgress | null) =>
       set((state) => {
         state.previewProgress = progress
+      }),
+
+    setPreviewError: (error: string | null) =>
+      set((state) => {
+        state.previewError = error
       }),
 
     incrementPreviewProgress: () =>

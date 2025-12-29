@@ -41,6 +41,12 @@ export const BackgroundPicker = () => {
       })
   }, [items, mediaServerPort])
 
+  useEffect(() => {
+    if (backgroundVideos.length > 0 && !selectedBackground) {
+      setSelectedBackground(backgroundVideos[0])
+    }
+  }, [backgroundVideos, selectedBackground, setSelectedBackground])
+
   const pendingCount = useMemo(() => {
     return items.filter(
       (item) => item.type === 'video' && item.category === 'background' && !item.isDownloaded

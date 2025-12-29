@@ -18,10 +18,12 @@ import {
   StopIcon,
   CircleNotchIcon,
   UserIcon,
+  XIcon,
 } from '@phosphor-icons/react'
 import { useCaptionedVideoStore } from './store'
 import { CharacterMode } from './types'
 import { OpenAITTSProvider } from '@/lib/providers/openAI'
+import { VoiceSelect } from '@/components/shared/VoiceSelect'
 
 interface CaptionedVideoSlideProps {
   slideUid: string
@@ -33,14 +35,17 @@ export const CaptionedVideoSlide = ({ slideUid, index }: CaptionedVideoSlideProp
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const slide = useCaptionedVideoStore((s) => s.slides.find((sl) => sl.uid === slideUid))
-  const voice = useCaptionedVideoStore((s) => s.voice)
   const deleteSlide = useCaptionedVideoStore((s) => s.deleteSlide)
   const updateSlideText = useCaptionedVideoStore((s) => s.updateSlideText)
+  const updateSlideVoice = useCaptionedVideoStore((s) => s.updateSlideVoice)
   const updateSlideCharacterMode = useCaptionedVideoStore((s) => s.updateSlideCharacterMode)
   const openCharacterPicker = useCaptionedVideoStore((s) => s.openCharacterPicker)
+  const updateSlideImage = useCaptionedVideoStore((s) => s.updateSlideImage)
   const updateSlideAudioData = useCaptionedVideoStore((s) => s.updateSlideAudioData)
 
   if (!slide) return null
+
+  const voice = slide.voice
 
   const computeHash = (text: string): string => {
     let hash = 0
@@ -113,6 +118,18 @@ export const CaptionedVideoSlide = ({ slideUid, index }: CaptionedVideoSlideProp
     setGeneratingAudio(false)
   }
 
+  const handleImageUpload = async () => {
+    const result = await window.ipcRenderer.invoke('SELECT_IMAGE')
+    if (result.ok && result.mediaUrl) {
+      updateSlideImage(slideUid, result.mediaUrl)
+    }
+  }
+
+  const handleRemoveImage = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    updateSlideImage(slideUid, undefined)
+  }
+
   return (
     <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-100 flex flex-col gap-2">
       {/* Header */}
@@ -150,6 +167,12 @@ export const CaptionedVideoSlide = ({ slideUid, index }: CaptionedVideoSlideProp
             <SpeakerHighIcon size={12} weight="fill" />
           )}
         </Button>
+        <VoiceSelect
+          value={voice}
+          onChange={(v) => updateSlideVoice(slideUid, v)}
+          className="w-[100px] h-7"
+          compact
+        />
         <div className="grow" />
         {/* Character mode selector */}
         <Select
@@ -170,6 +193,39 @@ export const CaptionedVideoSlide = ({ slideUid, index }: CaptionedVideoSlideProp
 
       {/* Content */}
       <div className="flex gap-3">
+        {/* Permanent image */}
+        <div className="flex flex-col gap-1 shrink-0">
+          <Label className="text-xs text-center text-muted-foreground">Image</Label>
+          <button
+            onClick={handleImageUpload}
+            className="relative w-[56px] h-[100px] bg-white rounded-lg overflow-hidden border border-neutral-200 group cursor-pointer hover:border-neutral-400 transition-colors"
+          >
+            {slide.imageUrl ? (
+              <>
+                <img
+                  src={slide.imageUrl}
+                  className="w-full h-full object-cover"
+                  alt="Slide image"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <ImageIcon size={20} className="text-white" weight="bold" />
+                </div>
+                <button
+                  onClick={handleRemoveImage}
+                  className="absolute top-1 right-1 w-4 h-4 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                >
+                  <XIcon size={10} className="text-white" weight="bold" />
+                </button>
+              </>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-neutral-400 group-hover:text-neutral-600 transition-colors">
+                <ImageIcon size={20} />
+                <span className="text-[10px] mt-1">Upload</span>
+              </div>
+            )}
+          </button>
+        </div>
+
         {/* Text input */}
         <div className="flex-1 flex flex-col gap-1.5">
           <Label className="text-xs text-muted-foreground">Content</Label>

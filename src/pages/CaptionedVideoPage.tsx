@@ -1,5 +1,5 @@
 import { Player } from '@remotion/player'
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import {
   PlusIcon,
   DownloadSimpleIcon,
@@ -11,7 +11,6 @@ import {
 import { useRouter } from '@/state/router'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { VoiceSelect } from '@/components/shared/VoiceSelect'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Section } from '@/components/shared/Section'
 import { FPS } from '@/remotion/constants'
@@ -120,14 +119,14 @@ export const CaptionedVideoPage = () => {
     const slide = store.getSlide(uid)
     if (!slide || !slide.text) return null
 
-    const textHash = computeHash(slide.text + store.voice)
+    const textHash = computeHash(slide.text + slide.voice)
 
     if (slide.textHash === textHash && slide.audioData?.audioUrl) {
       return { audioUrl: slide.audioData.audioUrl, isNew: false }
     }
 
     const tts = new OpenAITTSProvider()
-    const result = await tts.generate(store.voice, slide.text)
+    const result = await tts.generate(slide.voice, slide.text)
 
     const saveResult = await window.ipcRenderer.invoke('SAVE_GENERATED_AUDIO', {
       base64Data: result.base64Data,
@@ -169,10 +168,13 @@ export const CaptionedVideoPage = () => {
     const dialog = currentSlides
       .filter((s) => s.text.trim())
       .map((slide) => {
+        const slideImageUrl = transformMediaUrl(slide.imageUrl, port)
+
         if (slide.audioData?.timestamps) {
           const { words, wordStartTimestampSeconds, wordEndTimestampSeconds } = slide.audioData.timestamps
           return {
             speaker: 'system' as const,
+            imageUrl: slideImageUrl,
             message: [
               {
                 words: words.map((word, i) => ({
@@ -189,6 +191,7 @@ export const CaptionedVideoPage = () => {
 
         return {
           speaker: 'system' as const,
+          imageUrl: slideImageUrl,
           message: [
             {
               words: slide.text.split(' ').map((word, i, arr) => ({
@@ -217,10 +220,11 @@ export const CaptionedVideoPage = () => {
     if (!store.slides.length) return
 
     store.setPreviewGenerating(true)
+    store.setPreviewError(null)
 
     const slidesNeedingAudio = store.slides.filter((s) => {
       if (!s.text) return false
-      const hash = computeHash(s.text + store.voice)
+      const hash = computeHash(s.text + s.voice)
       return s.textHash !== hash || !s.audioData?.audioUrl
     })
 
@@ -229,9 +233,18 @@ export const CaptionedVideoPage = () => {
       audioDone: 0,
     })
 
-    for (const slide of slidesNeedingAudio) {
-      await generateAudioForSlide(slide.uid)
-      store.incrementPreviewProgress()
+    try {
+      for (const slide of slidesNeedingAudio) {
+        await generateAudioForSlide(slide.uid)
+        store.incrementPreviewProgress()
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
+      console.error('Preview generation failed:', err)
+      store.setPreviewError(errorMessage)
+      store.setPreviewGenerating(false)
+      store.setPreviewProgress(null)
+      return
     }
 
     const generatedTimeline = createTimelineFromSlides()
@@ -314,36 +327,29 @@ export const CaptionedVideoPage = () => {
         <div className="flex-1 overflow-y-auto p-6 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-200 [&::-webkit-scrollbar-track]:my-2">
           <div className="flex flex-col gap-5 max-w-[640px] mx-auto pb-8">
             <Section title="Video Settings">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <Label>Voice</Label>
-                  <VoiceSelect value={store.voice} onChange={store.setVoice} />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label>Primary Color</Label>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => store.setColorPickerOpen(!store.colorPickerOpen)}
-                      className="w-full h-9 rounded-md border border-input cursor-pointer hover:opacity-90 transition-opacity"
-                      style={{ backgroundColor: store.primaryColor }}
-                    />
-                    {store.colorPickerOpen && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-40"
-                          onClick={() => store.setColorPickerOpen(false)}
+              <div className="flex flex-col gap-2">
+                <Label>Primary Color</Label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => store.setColorPickerOpen(!store.colorPickerOpen)}
+                    className="w-full h-9 rounded-md border border-input cursor-pointer hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: store.primaryColor }}
+                  />
+                  {store.colorPickerOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => store.setColorPickerOpen(false)}
+                      />
+                      <div className="absolute top-11 left-0 z-50">
+                        <Chrome
+                          color={store.primaryColor}
+                          onChange={(color) => store.setPrimaryColor(color.hex)}
                         />
-                        <div className="absolute top-11 left-0 z-50">
-                          <Chrome
-                            color={store.primaryColor}
-                            onChange={(color) => store.setPrimaryColor(color.hex)}
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -413,6 +419,13 @@ export const CaptionedVideoPage = () => {
               </span>
             )}
           </div>
+
+          {store.previewError && (
+            <div className="w-full bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
+              <p className="font-medium">Preview generation failed</p>
+              <p className="mt-1">{store.previewError}</p>
+            </div>
+          )}
 
           {store.renderError && (
             <div className="w-full bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">

@@ -398,6 +398,72 @@ ipcMain.handle(
   }
 );
 
+ipcMain.handle("SELECT_IMAGE", async () => {
+  try {
+    const result = await dialog.showOpenDialog({
+      properties: ["openFile"],
+      filters: [
+        { name: "Images", extensions: ["jpg", "jpeg", "png", "gif", "webp"] },
+      ],
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return { ok: false, canceled: true };
+    }
+
+    const sourcePath = result.filePaths[0];
+    const ext = path.extname(sourcePath).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".gif": "image/gif",
+      ".webp": "image/webp",
+    };
+    const mimeType = mimeTypes[ext] || "image/png";
+
+    const appDataPath = app.getPath("userData");
+    const genImagesDir = path.join(appDataPath, "gen", "images");
+
+    if (!fs.existsSync(genImagesDir)) {
+      fs.mkdirSync(genImagesDir, { recursive: true });
+    }
+
+    const filename = `uploaded_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`;
+    const destPath = path.join(genImagesDir, filename);
+
+    fs.copyFileSync(sourcePath, destPath);
+    const stats = fs.statSync(destPath);
+
+    const db = getDb();
+    const uid = crypto.randomUUID();
+    db.insert(schema.cacheFiles)
+      .values({
+        uid,
+        filePath: destPath,
+        fileName: filename,
+        mimeType,
+        size: stats.size,
+        category: "uploaded_image",
+      })
+      .run();
+
+    log.info("Copied uploaded image to:", destPath);
+
+    return {
+      ok: true,
+      filePath: destPath,
+      mediaUrl: `media://${encodeURIComponent(destPath)}`,
+    };
+  } catch (error) {
+    log.error("Failed to select/copy image:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
 ipcMain.handle("GET_CACHE_STATS", async () => {
   try {
     const db = getDb();
