@@ -1,12 +1,13 @@
-import { BackgroundVideo, CharacterImage } from './types'
+import { BackgroundMedia, CharacterImage } from './types'
 
 
-export const BACKGROUND_VIDEOS: BackgroundVideo[] = [
+export const BACKGROUND_VIDEOS: BackgroundMedia[] = [
   {
     uid: 'bg-1',
     name: 'Sunset Beach',
     url: 'https://picsum.photos/seed/sunset/1080/1920',
     thumbnailUrl: 'https://picsum.photos/seed/sunset/270/480',
+    type: 'image',
     durationMs: 15000,
   },
   {
@@ -14,6 +15,7 @@ export const BACKGROUND_VIDEOS: BackgroundVideo[] = [
     name: 'City Lights',
     url: 'https://picsum.photos/seed/city/1080/1920',
     thumbnailUrl: 'https://picsum.photos/seed/city/270/480',
+    type: 'image',
     durationMs: 12000,
   },
   {
@@ -21,6 +23,7 @@ export const BACKGROUND_VIDEOS: BackgroundVideo[] = [
     name: 'Forest Path',
     url: 'https://picsum.photos/seed/forest/1080/1920',
     thumbnailUrl: 'https://picsum.photos/seed/forest/270/480',
+    type: 'image',
     durationMs: 20000,
   },
   {
@@ -28,6 +31,7 @@ export const BACKGROUND_VIDEOS: BackgroundVideo[] = [
     name: 'Mountain View',
     url: 'https://picsum.photos/seed/mountain/1080/1920',
     thumbnailUrl: 'https://picsum.photos/seed/mountain/270/480',
+    type: 'image',
     durationMs: 18000,
   },
   {
@@ -35,6 +39,7 @@ export const BACKGROUND_VIDEOS: BackgroundVideo[] = [
     name: 'Ocean Waves',
     url: 'https://picsum.photos/seed/ocean/1080/1920',
     thumbnailUrl: 'https://picsum.photos/seed/ocean/270/480',
+    type: 'image',
     durationMs: 25000,
   },
   {
@@ -42,6 +47,7 @@ export const BACKGROUND_VIDEOS: BackgroundVideo[] = [
     name: 'Night Sky',
     url: 'https://picsum.photos/seed/stars/1080/1920',
     thumbnailUrl: 'https://picsum.photos/seed/stars/270/480',
+    type: 'image',
     durationMs: 30000,
   },
   {
@@ -49,6 +55,7 @@ export const BACKGROUND_VIDEOS: BackgroundVideo[] = [
     name: 'Rainy Window',
     url: 'https://picsum.photos/seed/rain/1080/1920',
     thumbnailUrl: 'https://picsum.photos/seed/rain/270/480',
+    type: 'image',
     durationMs: 22000,
   },
   {
@@ -56,6 +63,7 @@ export const BACKGROUND_VIDEOS: BackgroundVideo[] = [
     name: 'Desert Dunes',
     url: 'https://picsum.photos/seed/desert/1080/1920',
     thumbnailUrl: 'https://picsum.photos/seed/desert/270/480',
+    type: 'image',
     durationMs: 16000,
   },
 ]

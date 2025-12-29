@@ -19,13 +19,17 @@ export interface CaptionedVideoSlideType {
   textHash?: string
 }
 
-export interface BackgroundVideo {
+export interface BackgroundMedia {
   uid: string
   name: string
   url: string
   thumbnailUrl: string
+  type: 'video' | 'image'
   durationMs: number
 }
+
+
+export type BackgroundVideo = BackgroundMedia
 
 export interface CharacterImage {
   uid: string

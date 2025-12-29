@@ -464,6 +464,112 @@ ipcMain.handle("SELECT_IMAGE", async () => {
   }
 });
 
+ipcMain.handle("SELECT_BACKGROUND_MEDIA", async () => {
+  try {
+    const result = await dialog.showOpenDialog({
+      properties: ["openFile"],
+      filters: [
+        { name: "Media", extensions: ["jpg", "jpeg", "png", "gif", "webp", "mp4", "mov", "webm"] },
+      ],
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return { ok: false, canceled: true };
+    }
+
+    const sourcePath = result.filePaths[0];
+    const ext = path.extname(sourcePath).toLowerCase();
+    const fileName = path.basename(sourcePath);
+
+    const videoExts = [".mp4", ".mov", ".webm"];
+    const isVideo = videoExts.includes(ext);
+
+    const mimeTypes: Record<string, string> = {
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".gif": "image/gif",
+      ".webp": "image/webp",
+      ".mp4": "video/mp4",
+      ".mov": "video/quicktime",
+      ".webm": "video/webm",
+    };
+    const mimeType = mimeTypes[ext] || (isVideo ? "video/mp4" : "image/png");
+
+    const appDataPath = app.getPath("userData");
+    const genBackgroundsDir = path.join(appDataPath, "gen", "backgrounds");
+
+    if (!fs.existsSync(genBackgroundsDir)) {
+      fs.mkdirSync(genBackgroundsDir, { recursive: true });
+    }
+
+    const uniqueFilename = `bg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`;
+    const destPath = path.join(genBackgroundsDir, uniqueFilename);
+
+    fs.copyFileSync(sourcePath, destPath);
+    const stats = fs.statSync(destPath);
+
+    const db = getDb();
+    const uid = crypto.randomUUID();
+    db.insert(schema.cacheFiles)
+      .values({
+        uid,
+        filePath: destPath,
+        fileName,
+        mimeType,
+        size: stats.size,
+        category: "uploaded_background",
+      })
+      .run();
+
+    log.info("Copied uploaded background to:", destPath);
+
+    return {
+      ok: true,
+      uid,
+      fileName,
+      filePath: destPath,
+      mimeType,
+      mediaUrl: `media://${encodeURIComponent(destPath)}`,
+    };
+  } catch (error) {
+    log.error("Failed to select/copy background media:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
+ipcMain.handle("GET_UPLOADED_BACKGROUNDS", async () => {
+  try {
+    const db = getDb();
+    const files = db
+      .select()
+      .from(schema.cacheFiles)
+      .where(eq(schema.cacheFiles.category, "uploaded_background"))
+      .all();
+
+    const activeFiles = files.filter((f) => !f.deletedAt);
+
+    return {
+      ok: true,
+      items: activeFiles.map((f) => ({
+        uid: f.uid,
+        fileName: f.fileName,
+        filePath: f.filePath,
+        mimeType: f.mimeType,
+      })),
+    };
+  } catch (error) {
+    log.error("Failed to get uploaded backgrounds:", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+});
+
 ipcMain.handle("GET_CACHE_STATS", async () => {
   try {
     const db = getDb();

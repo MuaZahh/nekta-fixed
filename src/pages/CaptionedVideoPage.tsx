@@ -158,7 +158,7 @@ export const CaptionedVideoPage = () => {
 
     const backgrounds: CaptionedVideoBackground[] = currentBackground
       ? [{
-          type: 'video' as const,
+          type: currentBackground.type || 'video',
           url: currentBackground.url,
           fromMs: 0,
           durationMs: currentBackground.durationMs,
