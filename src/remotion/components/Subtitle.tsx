@@ -68,9 +68,32 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
 
   const currentTimeMs = (frame / fps) * 1000;
 
-  const activeWordIndex = wordTimestamps?.findIndex(
-    (wt) => currentTimeMs >= wt.startMs && currentTimeMs < wt.endMs
-  ) ?? -1;
+  // Find the active word - either currently speaking or the last word that started
+  // This handles gaps between words in natural speech
+  const activeWordIndex = (() => {
+    if (!wordTimestamps || wordTimestamps.length === 0) return -1;
+
+    // First, try to find a word currently being spoken
+    const exactMatch = wordTimestamps.findIndex(
+      (wt) => currentTimeMs >= wt.startMs && currentTimeMs < wt.endMs
+    );
+    if (exactMatch !== -1) return exactMatch;
+
+    // If no exact match, find the last word that has started but before the next word starts
+    for (let i = wordTimestamps.length - 1; i >= 0; i--) {
+      const wt = wordTimestamps[i];
+      const nextWord = wordTimestamps[i + 1];
+
+      // Word has started and either:
+      // - it's the last word, or
+      // - we're before the next word starts
+      if (currentTimeMs >= wt.startMs && (!nextWord || currentTimeMs < nextWord.startMs)) {
+        return i;
+      }
+    }
+
+    return -1;
+  })();
 
   const desiredFontSize = 120;
   const { lines, splitIndex } = splitTextByCharCount(text);

@@ -136,6 +136,7 @@ export const AIVideoPage = () => {
   const [isPreviewGenerated, setIsPreviewGenerated] = useState(false)
   const [timeline, setTimeline] = useState<Timeline | null>(null)
   const [previewGenerating, setPreviewGenerating] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
   const [previewProgress, setPreviewProgress] = useState<{
     imagesTotal: number
     imagesDone: number
@@ -348,6 +349,7 @@ export const AIVideoPage = () => {
     if (!slides.length) return null
 
     setPreviewGenerating(true)
+    setPreviewError(null)
 
     const slidesNeedingImage = slides.filter((s) => {
       if (!s.imageDesc) return false
@@ -369,20 +371,28 @@ export const AIVideoPage = () => {
       audioDone: 0,
     })
 
-    for (const slide of slidesNeedingImage) {
-      await onGenerateImage(slide.uid)
-      setPreviewProgress((prev) =>
-        prev ? { ...prev, imagesDone: prev.imagesDone + 1 } : null
-      )
-    }
+    try {
+      for (const slide of slidesNeedingImage) {
+        await onGenerateImage(slide.uid)
+        setPreviewProgress((prev) =>
+          prev ? { ...prev, imagesDone: prev.imagesDone + 1 } : null
+        )
+      }
 
-    for (const slide of slidesNeedingAudio) {
-      await onGenerateAudio(slide.uid)
-      setPreviewProgress((prev) =>
-        prev ? { ...prev, audioDone: prev.audioDone + 1 } : null
-      )
+      for (const slide of slidesNeedingAudio) {
+        await onGenerateAudio(slide.uid)
+        setPreviewProgress((prev) =>
+          prev ? { ...prev, audioDone: prev.audioDone + 1 } : null
+        )
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
+      console.error('Preview generation failed:', err)
+      setPreviewError(errorMessage)
+      setPreviewGenerating(false)
+      setPreviewProgress(null)
+      return null
     }
-
 
     // Generate timeline from updated slides
     // We need to get the latest slides state
@@ -579,10 +589,10 @@ export const AIVideoPage = () => {
               <VideoCameraIcon size={48} className="text-neutral-300" />
             </div>
           )}
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-1 w-full max-w-[180px]">
             <Button
               variant="default"
-              className="border"
+              className="border w-full max-w-[180px]"
               size="sm"
               onClick={onGeneratePreview}
               disabled={!slides.length || previewGenerating}
@@ -600,6 +610,12 @@ export const AIVideoPage = () => {
               </span>
             )}
           </div>
+          {previewError && (
+            <div className="w-full bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
+              <p className="font-medium">Preview generation failed</p>
+              <p className="mt-1">{previewError}</p>
+            </div>
+          )}
           {/* Render Button & Progress */}
           {renderError && (
             <div className="w-full bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
@@ -609,7 +625,7 @@ export const AIVideoPage = () => {
           )}
 
           {isRendering && renderProgress ? (
-            <div className="w-full bg-white rounded-lg p-3">
+            <div className="w-full bg-white rounded-xl p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-neutral-700">
                   {renderProgress.stitchStage === 'encoding' ? 'Encoding' : 'Muxing Audio'}
@@ -629,13 +645,13 @@ export const AIVideoPage = () => {
               </div>
             </div>
           ) : (
-            <div className="w-full flex flex-col gap-2">
+            <div className="w-full flex flex-col gap-2 items-center">
               {renderProgress && !isRendering && renderProgress.progress === 1 && (
                 <>
                   <p className="text-neutral-900 font-medium text-center text-sm">Render Complete!</p>
                   <Button
                     variant="default"
-                    className="border w-full"
+                    className="border w-full max-w-[180px]"
                     size="sm"
                     onClick={() => setRoute('library')}
                   >
@@ -646,7 +662,7 @@ export const AIVideoPage = () => {
               )}
               <Button
                 variant="default"
-                className="border w-full"
+                className="border w-full max-w-[180px]"
                 size="sm"
                 onClick={onSaveVideo}
                 disabled={!slides.length || previewGenerating || isRendering}

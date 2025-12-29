@@ -422,7 +422,7 @@ export const CaptionedVideoPage = () => {
           )}
 
           {store.isRendering && store.renderProgress ? (
-            <div className="w-full bg-white rounded-lg p-3">
+            <div className="w-full bg-white rounded-xl p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-neutral-700">
                   {store.renderProgress.stitchStage === 'encoding' ? 'Encoding' : 'Muxing Audio'}
