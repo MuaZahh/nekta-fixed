@@ -15,6 +15,43 @@ interface SubtitleProps {
   primaryColor?: string;
 }
 
+interface SplitResult {
+  lines: string[];
+  splitIndex: number; 
+}
+
+function splitTextByCharCount(text: string): SplitResult {
+  const words = text.split(" ");
+
+  if (words.length <= 3) {
+    return { lines: [text], splitIndex: -1 };
+  }
+
+  const totalChars = text.length;
+  const targetChars = totalChars / 2;
+
+  let bestSplitIndex = 1;
+  let bestDiff = Infinity;
+
+  for (let i = 1; i < words.length; i++) {
+    const firstLineChars = words.slice(0, i).join(" ").length;
+    const diff = Math.abs(firstLineChars - targetChars);
+
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestSplitIndex = i;
+    }
+  }
+
+  return {
+    lines: [
+      words.slice(0, bestSplitIndex).join(" "),
+      words.slice(bestSplitIndex).join(" ")
+    ],
+    splitIndex: bestSplitIndex
+  };
+}
+
 const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor = "yellow" }) => {
   const frame = useCurrentFrame();
   const { fps, width } = useVideoConfig();
@@ -36,15 +73,28 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
   ) ?? -1;
 
   const desiredFontSize = 120;
+  const { lines, splitIndex } = splitTextByCharCount(text);
+  const longestLine = lines.reduce((a, b) => a.length > b.length ? a : b);
+  const isTwoLines = lines.length === 2;
+  const longestLineWordCount = longestLine.split(" ").length;
+  const wordGap = 0.25; // gap as fraction of fontSize
+
+  const padding = 100;
+  const strokeWidth = 40;
+  const safetyMargin = 20;
+  const baseAvailableWidth = width - padding - strokeWidth - safetyMargin;
+  const gapFactor = 1 + (longestLineWordCount - 1) * wordGap * 0.8;
+  const availableWidth = baseAvailableWidth / gapFactor;
 
   const fittedText = fitText({
     fontFamily,
-    text,
-    withinWidth: width * 0.8,
+    text: longestLine,
+    withinWidth: availableWidth,
     fontWeight: 700
   });
 
   const fontSize = Math.min(desiredFontSize, fittedText.fontSize);
+  const lineHeight = fontSize * 1.15;
 
   if (!wordTimestamps || wordTimestamps.length === 0) {
     return (
@@ -55,7 +105,7 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
             alignItems: "center",
             top: undefined,
             bottom: 350,
-            height: 150,
+            height: isTwoLines ? lineHeight * 2 + 20 : lineHeight,
           }}
         >
           <div
@@ -68,9 +118,15 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
               textAlign: "center",
               fontWeight: 700,
               transform: `scale(${0.8 + 0.2 * enter}) translateY(${50 * (1 - enter)}px)`,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 10,
             }}
           >
-            {text}
+            {lines.map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
           </div>
         </AbsoluteFill>
         <AbsoluteFill
@@ -79,7 +135,7 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
             alignItems: "center",
             top: undefined,
             bottom: 350,
-            height: 150,
+            height: isTwoLines ? lineHeight * 2 + 20 : lineHeight,
           }}
         >
           <div
@@ -91,14 +147,48 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
               textTransform: "uppercase",
               textAlign: "center",
               transform: `scale(${0.8 + 0.2 * enter}) translateY(${50 * (1 - enter)}px)`,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 10,
             }}
           >
-            {text}
+            {lines.map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
           </div>
         </AbsoluteFill>
       </AbsoluteFill>
     );
   }
+
+  const line1Words = isTwoLines ? wordTimestamps.slice(0, splitIndex) : wordTimestamps;
+  const line2Words = isTwoLines ? wordTimestamps.slice(splitIndex) : [];
+
+  const renderLine = (words: WordTimestamp[], lineOffset: number, isStroke: boolean) => (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        gap: fontSize * 0.25,
+      }}
+    >
+      {words.map((wt, index) => {
+        const globalIndex = index + lineOffset;
+        return (
+          <span
+            key={index}
+            style={{
+              color: globalIndex === activeWordIndex ? primaryColor : "white",
+              ...(isStroke ? { WebkitTextStroke: "20px black" } : {}),
+            }}
+          >
+            {wt.word}
+          </span>
+        );
+      })}
+    </div>
+  );
 
   return (
     <AbsoluteFill>
@@ -108,7 +198,7 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
           alignItems: "center",
           top: undefined,
           bottom: 350,
-          height: 150,
+          height: isTwoLines ? lineHeight * 2 + 20 : lineHeight,
           paddingLeft: 50,
           paddingRight: 50
         }}
@@ -122,22 +212,13 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
             textAlign: "center",
             transform: `scale(${0.8 + 0.2 * enter}) translateY(${50 * (1 - enter)}px)`,
             display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            gap: fontSize * 0.25,
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 10,
           }}
         >
-          {wordTimestamps.map((wt, index) => (
-            <span
-              key={index}
-              style={{
-                color: index === activeWordIndex ? primaryColor : "white",
-                WebkitTextStroke: "20px black",
-              }}
-            >
-              {wt.word}
-            </span>
-          ))}
+          {renderLine(line1Words, 0, true)}
+          {isTwoLines && renderLine(line2Words, splitIndex, true)}
         </div>
       </AbsoluteFill>
       <AbsoluteFill
@@ -146,7 +227,7 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
           alignItems: "center",
           top: undefined,
           bottom: 350,
-          height: 150,
+          height: isTwoLines ? lineHeight * 2 + 20 : lineHeight,
           paddingLeft: 50,
           paddingRight: 50
         }}
@@ -160,21 +241,13 @@ const Subtitle: React.FC<SubtitleProps> = ({ text, wordTimestamps, primaryColor 
             textAlign: "center",
             transform: `scale(${0.8 + 0.2 * enter}) translateY(${50 * (1 - enter)}px)`,
             display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            gap: fontSize * 0.25,
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 10,
           }}
         >
-          {wordTimestamps.map((wt, index) => (
-            <span
-              key={index}
-              style={{
-                color: index === activeWordIndex ? primaryColor : "white",
-              }}
-            >
-              {wt.word}
-            </span>
-          ))}
+          {renderLine(line1Words, 0, false)}
+          {isTwoLines && renderLine(line2Words, splitIndex, false)}
         </div>
       </AbsoluteFill>
     </AbsoluteFill>
