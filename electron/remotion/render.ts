@@ -126,7 +126,7 @@ export type BrowserDownloadProgress = {
 
 /**
  * Ensures Chrome Headless Shell is available, downloading if necessary.
- * Sends download progress to all renderer windows.
+ * Sends download progress to all renderer windows only when actually downloading.
  */
 export async function ensureBrowserWithProgress(): Promise<string> {
   // Return cached path if already downloaded
@@ -137,16 +137,21 @@ export async function ensureBrowserWithProgress(): Promise<string> {
 
   log.info("Ensuring Chrome Headless Shell is available...");
 
-  // Send initial status to all windows
-  const windows = BrowserWindow.getAllWindows();
-  windows.forEach((win) => {
-    win.webContents.send("BROWSER_DOWNLOAD_START");
-  });
+  // Track whether a download actually occurred
+  let downloadStarted = false;
 
   try {
     const result = await ensureBrowser({
       onBrowserDownload: () => {
         log.info("Starting Chrome Headless Shell download...");
+        downloadStarted = true;
+
+        // Send start event only when download actually begins
+        const windows = BrowserWindow.getAllWindows();
+        windows.forEach((win) => {
+          win.webContents.send("BROWSER_DOWNLOAD_START");
+        });
+
         return {
           onProgress: (progress) => {
             // Send progress to all renderer windows
@@ -175,21 +180,27 @@ export async function ensureBrowserWithProgress(): Promise<string> {
     cachedBrowserExecutable = browserPath;
     log.info(`Chrome Headless Shell ready at: ${browserPath}`);
 
-    // Send completion to all windows
-    windows.forEach((win) => {
-      win.webContents.send("BROWSER_DOWNLOAD_COMPLETE");
-    });
+    // Send completion only if download actually occurred
+    if (downloadStarted) {
+      const windows = BrowserWindow.getAllWindows();
+      windows.forEach((win) => {
+        win.webContents.send("BROWSER_DOWNLOAD_COMPLETE");
+      });
+    }
 
     return browserPath;
   } catch (error) {
     log.error("Failed to ensure browser:", error);
 
-    // Send error to all windows
-    windows.forEach((win) => {
-      win.webContents.send("BROWSER_DOWNLOAD_ERROR", {
-        message: error instanceof Error ? error.message : String(error),
+    // Send error only if download was attempted
+    if (downloadStarted) {
+      const windows = BrowserWindow.getAllWindows();
+      windows.forEach((win) => {
+        win.webContents.send("BROWSER_DOWNLOAD_ERROR", {
+          message: error instanceof Error ? error.message : String(error),
+        });
       });
-    });
+    }
 
     throw error;
   }

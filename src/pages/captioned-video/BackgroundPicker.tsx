@@ -95,7 +95,7 @@ export const BackgroundPicker = () => {
                 onClick={() => handleToggle(video)}
                 className={`relative shrink-0 rounded-xl overflow-hidden group cursor-pointer border-2 transition-all ${
                   selected
-                    ? 'border-black ring-2 ring-black/20'
+                    ? 'border-gray-500'
                     : 'border-transparent hover:border-neutral-300'
                 }`}
                 style={{
