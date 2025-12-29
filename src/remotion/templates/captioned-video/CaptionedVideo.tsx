@@ -80,40 +80,55 @@ export const CaptionedVideo: React.FC<CaptionedVideoTimeline> = ({
           const segmentStartMs = messageOffsetMs;
           messageOffsetMs += segment.durationMs;
 
+          const segmentStartFrame = Math.round((segmentStartMs / 1000) * FPS);
+          const segmentDurationFrames = Math.max(1, Math.round((segment.durationMs / 1000) * FPS));
+
           const wordChunks: typeof segment.words[] = [];
           for (let i = 0; i < segment.words.length; i += MAX_WORDS_PER_LINE) {
             wordChunks.push(segment.words.slice(i, i + MAX_WORDS_PER_LINE));
           }
 
-          return wordChunks.map((chunk, chunkIndex) => {
-            const chunkStartMs = segmentStartMs + chunk[0].startMs;
-            const chunkEndMs = segmentStartMs + chunk[chunk.length - 1].endMs;
-            const chunkDurationMs = chunkEndMs - chunkStartMs;
+          return (
+            <>
+              {segment.audioUrl && (
+                <Sequence
+                  key={`audio-${dialogIndex}-${segmentIndex}`}
+                  from={segmentStartFrame}
+                  durationInFrames={segmentDurationFrames}
+                >
+                  <Audio src={segment.audioUrl} />
+                </Sequence>
+              )}
+              {wordChunks.map((chunk, chunkIndex) => {
+                const chunkStartMs = segmentStartMs + chunk[0].startMs;
+                const chunkEndMs = segmentStartMs + chunk[chunk.length - 1].endMs;
+                const chunkDurationMs = chunkEndMs - chunkStartMs;
 
-            const startFrame = Math.round((chunkStartMs / 1000) * FPS);
-            const duration = Math.max(1, Math.round((chunkDurationMs / 1000) * FPS));
+                const startFrame = Math.round((chunkStartMs / 1000) * FPS);
+                const duration = Math.max(1, Math.round((chunkDurationMs / 1000) * FPS));
 
-            const adjustedWords = chunk.map(w => ({
-              ...w,
-              startMs: w.startMs - chunk[0].startMs,
-              endMs: w.endMs - chunk[0].startMs,
-            }));
+                const adjustedWords = chunk.map(w => ({
+                  ...w,
+                  startMs: w.startMs - chunk[0].startMs,
+                  endMs: w.endMs - chunk[0].startMs,
+                }));
 
-            return (
-              <Sequence
-                key={`dialog-${dialogIndex}-${segmentIndex}-${chunkIndex}`}
-                from={startFrame}
-                durationInFrames={duration}
-              >
-                {chunkIndex === 0 && segment.audioUrl && <Audio src={segment.audioUrl} />}
-                <Subtitle
-                  text={chunk.map(w => w.word).join(' ')}
-                  wordTimestamps={adjustedWords}
-                  primaryColor={settings.highlightOutlineColor}
-                />
-              </Sequence>
-            );
-          });
+                return (
+                  <Sequence
+                    key={`dialog-${dialogIndex}-${segmentIndex}-${chunkIndex}`}
+                    from={startFrame}
+                    durationInFrames={duration}
+                  >
+                    <Subtitle
+                      text={chunk.map(w => w.word).join(' ')}
+                      wordTimestamps={adjustedWords}
+                      primaryColor={settings.highlightOutlineColor}
+                    />
+                  </Sequence>
+                );
+              })}
+            </>
+          );
         });
       })}
     </AbsoluteFill>

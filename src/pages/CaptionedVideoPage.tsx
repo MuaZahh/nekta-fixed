@@ -70,6 +70,10 @@ export const CaptionedVideoPage = () => {
   const mediaServerPortRef = useRef<number | null>(null)
 
   useEffect(() => {
+    return () => store.reset()
+  }, [])
+
+  useEffect(() => {
     window.ipcRenderer.invoke('GET_MEDIA_SERVER_PORT').then((port) => {
       mediaServerPortRef.current = port
     })
@@ -388,10 +392,10 @@ export const CaptionedVideoPage = () => {
               <VideoCameraIcon size={48} className="text-neutral-300" />
             </div>
           )}
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-1 w-full max-w-[180px]">
             <Button
               variant="default"
-              className="border"
+              className="border w-full max-w-[180px]"
               size="sm"
               onClick={onGeneratePreview}
               disabled={!store.slides.length || store.previewGenerating}
@@ -440,7 +444,7 @@ export const CaptionedVideoPage = () => {
               </div>
             </div>
           ) : (
-            <div className="w-full flex flex-col gap-2">
+            <div className="w-full flex flex-col gap-2 items-center">
               {store.renderProgress && !store.isRendering && store.renderProgress.progress === 1 && (
                 <>
                   <p className="text-neutral-900 font-medium text-center text-sm">
@@ -448,7 +452,7 @@ export const CaptionedVideoPage = () => {
                   </p>
                   <Button
                     variant="default"
-                    className="border w-full"
+                    className="border w-full max-w-[180px]"
                     size="sm"
                     onClick={() => setRoute('library')}
                   >
@@ -459,7 +463,7 @@ export const CaptionedVideoPage = () => {
               )}
               <Button
                 variant="default"
-                className="border w-full"
+                className="border w-full max-w-[180px]"
                 size="sm"
                 onClick={onSaveVideo}
                 disabled={!store.slides.length || store.previewGenerating || store.isRendering}
