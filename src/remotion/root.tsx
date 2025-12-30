@@ -5,6 +5,7 @@ import { AIVideo, aiVideoSchema, calculateAIVideoMetadata } from "./templates/ai
 import { FPS } from "./constants";
 import { calculateCaptionedVideoMetadata, CaptionedVideo } from "./templates/captioned-video/CaptionedVideo";
 import { captionedVideoTimelineSchema } from "./templates/captioned-video/types";
+import { UgcAvatarHookVideo } from "./templates/ugc-avatar-hook/UgcAvatarHookVideo";
 
 function RemotionRoot() {
   return (
@@ -67,6 +68,16 @@ function RemotionRoot() {
           }
         }}
         calculateMetadata={calculateCaptionedVideoMetadata}
+      />
+      <Composition
+        id="UgcAvatarHookVideo"
+        component={UgcAvatarHookVideo}
+        schema={undefined}
+        durationInFrames={300}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={undefined}
       />
     </>
   );
