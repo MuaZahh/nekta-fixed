@@ -1,3 +1,4 @@
+import { messageSchema } from "@/remotion/types";
 import { z } from "zod";
 
 export const captionedVideoBackgroundTypeSchema = z.union([
@@ -30,22 +31,10 @@ export const captionedVideoSpeakerTypeSchema = z.union([
 export type CaptionedVideoSpeakerType = z.infer<typeof captionedVideoSpeakerTypeSchema>
 
 
-export const wordTimestampSchema = z.object({
-  word: z.string(),
-  startMs: z.number(),
-  endMs: z.number(),
-});
-export type WordTimestamp = z.infer<typeof wordTimestampSchema>
-
-
 export const dialogMessageSchema = z.object({
   speaker: captionedVideoSpeakerTypeSchema,
   imageUrl: z.string().optional(),
-  message: z.array(z.object({
-    words: z.array(wordTimestampSchema),
-    audioUrl: z.string().url().optional(),
-    durationMs: z.number()
-  }))
+  message: z.array(messageSchema)
 })
 export type DialogMessage = z.infer<typeof dialogMessageSchema>
 
