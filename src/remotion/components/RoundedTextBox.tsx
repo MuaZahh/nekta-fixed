@@ -17,7 +17,7 @@ type Props = {
 const fontWeight = '700';
 const boxWidth = 1000;
 const lineHeight = 1.5;
-const maxFontSize = 200;
+const maxFontSize = 130;
 
 const {waitUntilDone, fontFamily} = loadFont('normal', {
 	weights: [fontWeight],
