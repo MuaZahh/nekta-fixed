@@ -2,24 +2,15 @@ import { AbsoluteFill, Sequence, CalculateMetadataFunction } from "remotion";
 import { Audio, Video } from "@remotion/media";
 import { RoundedTextBox } from "@/remotion/components/RoundedTextBox";
 import OutlinedCaptions from "@/remotion/components/OutlinedCaptions";
-import { UgcAvatarHookTimeline, ugcAvatarHookTimelineSchema } from "./types";
+import { UgcAvatarHookTimeline, UgcClip, ugcAvatarHookTimelineSchema } from "./types";
 import { FPS } from "@/remotion/constants";
 import { useMemo } from "react";
-import { MessageType, VerticalAlignmentType, CaptionsType } from "@/remotion/types";
 
 const SECONDS_PER_WORD = 0.3;
 const MAX_WORDS_PER_LINE = 5;
+const DEFAULT_HIGHLIGHT_COLOR = "yellow";
 
-type ClipData = {
-  backgroundVideoUrl: string;
-  durationMs?: number;
-  message?: MessageType;
-  text?: string;
-  captionsAlign: VerticalAlignmentType;
-  captionsType: CaptionsType;
-};
-
-const calculateClipDuration = (clip: ClipData): number => {
+const calculateClipDuration = (clip: UgcClip): number => {
   if (clip.durationMs) {
     return clip.durationMs;
   }
@@ -30,11 +21,11 @@ const calculateClipDuration = (clip: ClipData): number => {
     const wordCount = clip.text.split(/\s+/).filter(Boolean).length;
     return wordCount * SECONDS_PER_WORD * 1000;
   }
-  return 3000; 
+  return 3000;
 };
 
 interface ClipProps {
-  clip: ClipData;
+  clip: UgcClip;
   startFrame: number;
   durationFrames: number;
 }
@@ -45,6 +36,9 @@ const Clip: React.FC<ClipProps> = ({ clip, startFrame, durationFrames }) => {
   const text = hasMessage
     ? clip.message!.words.map((w) => w.word).join(" ")
     : clip.text || "";
+
+  const highlightColor = clip.highlightColor || DEFAULT_HIGHLIGHT_COLOR;
+  const offsetStartFrames = clip.offsetStartMs ? Math.round((clip.offsetStartMs / 1000) * FPS) : 0;
 
   const wordChunks = useMemo(() => {
     if (!hasMessage || !clip.message) return [];
@@ -61,6 +55,7 @@ const Clip: React.FC<ClipProps> = ({ clip, startFrame, durationFrames }) => {
       <Sequence from={startFrame} durationInFrames={durationFrames}>
         <Video
           src={clip.backgroundVideoUrl}
+          trimBefore={offsetStartFrames}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
       </Sequence>
@@ -109,7 +104,7 @@ const Clip: React.FC<ClipProps> = ({ clip, startFrame, durationFrames }) => {
                 <OutlinedCaptions
                   text={chunk.map((w) => w.word).join(" ")}
                   wordTimestamps={adjustedWords}
-                  primaryColor="yellow"
+                  primaryColor={highlightColor}
                   verticalAlign={clip.captionsAlign}
                 />
               </Sequence>
@@ -122,7 +117,7 @@ const Clip: React.FC<ClipProps> = ({ clip, startFrame, durationFrames }) => {
         <Sequence from={startFrame} durationInFrames={durationFrames}>
           <OutlinedCaptions
             text={text}
-            primaryColor="yellow"
+            primaryColor={highlightColor}
             verticalAlign={clip.captionsAlign}
           />
         </Sequence>
@@ -133,7 +128,7 @@ const Clip: React.FC<ClipProps> = ({ clip, startFrame, durationFrames }) => {
 
 export const UgcAvatarHookVideo: React.FC<UgcAvatarHookTimeline> = ({ hook, content }) => {
   const clips = useMemo(() => {
-    const allClips: ClipData[] = [hook, ...content];
+    const allClips: UgcClip[] = [hook, ...content];
     let currentFrame = 0;
 
     return allClips.map((clip) => {
@@ -167,7 +162,7 @@ export const UgcAvatarHookVideo: React.FC<UgcAvatarHookTimeline> = ({ hook, cont
 export const calculateUgcAvatarHookMetadata: CalculateMetadataFunction<UgcAvatarHookTimeline> = async ({
   props,
 }) => {
-  const allClips: ClipData[] = [props.hook, ...props.content];
+  const allClips: UgcClip[] = [props.hook, ...props.content];
   const totalDurationMs = allClips.reduce((sum, clip) => sum + calculateClipDuration(clip), 0);
 
   return {
