@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 
-export type AppRoute = 'home' | 'reddit-story' | 'library' | 'settings' | 'usage' | 'avatars' | 'music' | 'ai-video' | 'captioned-video'
+export type AppRoute = 'home' | 'ugc-avatar-hook' | 'library' | 'settings' | 'usage' | 'avatars' | 'music' | 'ai-video' | 'captioned-video'
 
 type State = {
   route: AppRoute

@@ -37,7 +37,7 @@ export const Sidebar = () => {
   const route = useRouter((state) => state.route)
   const setRoute = useRouter((state) => state.setRoute)
 
-  const activeId = route === 'reddit-story' ? 'home' : route
+  const activeId = route
 
   return (
     <aside

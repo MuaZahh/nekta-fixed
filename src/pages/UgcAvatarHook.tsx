@@ -1,9 +1,9 @@
 import { PageLayout } from '../components/PageLayout'
 
-export const RedditStoryPage = () => {
+export const UgcAvatarHookPage = () => {
   
   return (
-    <PageLayout title="Reddit Story">
+    <PageLayout title="UGC Avatar (hook + demo)">
       <div></div>
     </PageLayout>
   )

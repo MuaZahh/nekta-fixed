@@ -6,7 +6,7 @@ import { Sidebar } from "./components/sidebar/Sidebar";
 import { BrowserDownloadModal } from "./components/browser-download/BrowserDownloadModal";
 import { ContentDownloadIndicator } from "./components/shared/ContentDownloadIndicator";
 import { HomePage } from "./pages/HomePage";
-import { RedditStoryPage } from "./pages/RedditStoryPage";
+import { UgcAvatarHookPage } from "./pages/UgcAvatarHook";
 import { LibraryPage } from "./pages/LibraryPage";
 import { useRouter } from "./state/router";
 import { AIVideoPage } from "./pages/AIVideoPage";
@@ -32,7 +32,7 @@ function App() {
       <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 scrollbar-none">
         {route === 'home' && <HomePage />}
         {route === 'ai-video' && <AIVideoPage />}
-        {route === 'reddit-story' && <RedditStoryPage />}
+        {route === 'ugc-avatar-hook' && <UgcAvatarHookPage />}
         {route === 'library' && <LibraryPage />}
         {route === 'settings' && <SettingsPage />}
         {route === 'captioned-video' && <CaptionedVideoPage />}

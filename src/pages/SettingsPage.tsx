@@ -38,13 +38,7 @@ const apiKeyData: ApiKeyDataItem[] = [
     type: 'elevenlabs',
     icon: elevenLabsIcon,
     iconSize: 24,
-  },
-  {
-    name: 'Gemini',
-    type: 'gemini',
-    icon: geminiIcon,
-    iconSize: 20,
-  },
+  }
 ]
 
 type CacheStats = {
