@@ -72,7 +72,7 @@ const Clip: React.FC<ClipProps> = ({ clip, startFrame, durationFrames }) => {
             text={text}
             textAlign="center"
             borderRadius={30}
-            maxLines={Math.max(1, Math.ceil(text.split(/\s+/).filter(Boolean).length / 6))}
+            maxLines={Math.max(1, Math.ceil(text.split(/\s+/).filter(Boolean).length / 5))}
             horizontalPadding={40}
             verticalAlign={clip.captionsAlign}
           />
