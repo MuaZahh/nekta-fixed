@@ -15,7 +15,7 @@ const suggestions: Record<ContentType, Suggestion[]> = {
     { id: 'v1', title: 'AI Story', description: 'Generate narrated stories with AI voices and visuals', route: 'ai-video' },
     { id: 'v6', title: 'Cpationed video', description: 'Create a video with captions and/or dialog', route: 'captioned-video' },
     { id: 'v2', title: 'UGC Avatar (hook + demo)', description: 'Great for marketing your eCom/SaaS/mobile app', route: 'ugc-avatar-hook' },
-    { id: 'v3', title: 'Transcribe', description: 'Convert speech to text from any video or audio' },
+    { id: 'v3', title: 'Video Slideshow', description: 'Create slideshows with AI-generated images', route: 'video-slideshow' },
     { id: 'v4', title: 'Add Captions', description: 'Add animated subtitles to your videos' },
     { id: 'v5', title: 'Fake Texts', description: 'Create realistic text message conversation videos' },
   ],

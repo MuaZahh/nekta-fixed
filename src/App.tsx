@@ -12,6 +12,7 @@ import { useRouter } from "./state/router";
 import { AIVideoPage } from "./pages/AIVideoPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { CaptionedVideoPage } from "./pages/CaptionedVideoPage";
+import { VideoSlideshowPage } from "./pages/VideoSlideshowPage";
 import { contentManager } from "./lib/contentManager";
 
 function App() {
@@ -36,7 +37,7 @@ function App() {
         {route === 'library' && <LibraryPage />}
         {route === 'settings' && <SettingsPage />}
         {route === 'captioned-video' && <CaptionedVideoPage />}
-
+        {route === 'video-slideshow' && <VideoSlideshowPage />}
       </main>
     </div>
   );
