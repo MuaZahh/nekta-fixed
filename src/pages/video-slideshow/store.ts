@@ -73,6 +73,8 @@ type Actions = {
   setCaptionsType: (type: CaptionsType) => void
   setImageModel: (model: string) => void
   setArtStyle: (style: string, desc: string) => void
+  setArtStyleId: (style: string) => void
+  setArtStyleDesc: (desc: string) => void
 
   // UI actions
   setGenerateModalOpen: (open: boolean) => void
@@ -211,6 +213,16 @@ export const useVideoSlideshowStore = create<State & Actions>()(
     setArtStyle: (style, desc) =>
       set((state) => {
         state.settings.artStyle = style
+        state.settings.artStyleDesc = desc
+      }),
+
+    setArtStyleId: (style) =>
+      set((state) => {
+        state.settings.artStyle = style
+      }),
+
+    setArtStyleDesc: (desc) =>
+      set((state) => {
         state.settings.artStyleDesc = desc
       }),
 

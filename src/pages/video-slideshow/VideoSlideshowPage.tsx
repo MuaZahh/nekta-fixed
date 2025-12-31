@@ -462,11 +462,8 @@ export const VideoSlideshowPage = () => {
                 <ArtStyleSelect
                   styleId={store.settings.artStyle}
                   styleDesc={store.settings.artStyleDesc}
-                  onStyleChange={(id) => {
-                    const style = require('@/data/contentStyles').ArtStyles.find((s: { uid: string }) => s.uid === id)
-                    store.setArtStyle(id, style?.description || '')
-                  }}
-                  onDescChange={(desc) => store.setArtStyle(store.settings.artStyle, desc)}
+                  onStyleChange={(id) => store.setArtStyleId(id)}
+                  onDescChange={(desc) => store.setArtStyleDesc(desc)}
                 />
               </div>
             </Section>
