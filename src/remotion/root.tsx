@@ -6,6 +6,8 @@ import { FPS } from "./constants";
 import { calculateCaptionedVideoMetadata, CaptionedVideo } from "./templates/captioned-video/CaptionedVideo";
 import { captionedVideoTimelineSchema } from "./templates/captioned-video/types";
 import { UgcAvatarHookVideo, calculateUgcAvatarHookMetadata, ugcAvatarHookTimelineSchema } from "./templates/ugc-avatar-hook/UgcAvatarHookVideo";
+import { calculateVideoSlideshowMetadata, VideoSlideshow } from "./templates/video-slideshow/VideoSlideshow";
+import { videoSlideshowTimelineSchema } from "./templates/video-slideshow/types";
 
 function RemotionRoot() {
   return (
@@ -96,6 +98,32 @@ function RemotionRoot() {
           ]
         }}
         calculateMetadata={calculateUgcAvatarHookMetadata}
+      />
+      
+      <Composition
+        id="VideoSlideshow"
+        component={VideoSlideshow}
+        schema={videoSlideshowTimelineSchema}
+        durationInFrames={300}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          slides: [
+            {
+              title: 'Top 10 best cities in UK to live in 2026',
+              content: 'Top 10 best cities in UK to live in 2026',
+              backgroundImageUrl: 'https://images.pexels.com/photos/34188665/pexels-photo-34188665.jpeg',
+            },
+            {
+              title: '1. London',
+              content: 'London is by far the most vibrant and alive city in the world. It is worth living here at least for at any stage of your life.',
+              backgroundImageUrl: 'https://images.pexels.com/photos/1427578/pexels-photo-1427578.jpeg',
+              verticalAlign: 'top'
+            }
+          ]
+        }}
+        calculateMetadata={calculateVideoSlideshowMetadata}
       />
     </>
   );
