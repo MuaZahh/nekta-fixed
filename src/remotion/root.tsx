@@ -109,6 +109,7 @@ function RemotionRoot() {
         width={1080}
         height={1920}
         defaultProps={{
+          captionsType: 'roundedTextbox',
           slides: [
             {
               title: 'Top 10 best cities in UK to live in 2026',
@@ -119,7 +120,7 @@ function RemotionRoot() {
               title: '1. London',
               content: 'London is by far the most vibrant and alive city in the world. It is worth living here at least for at any stage of your life.',
               backgroundImageUrl: 'https://images.pexels.com/photos/1427578/pexels-photo-1427578.jpeg',
-              verticalAlign: 'top'
+              verticalAlign: 'top',
             }
           ]
         }}

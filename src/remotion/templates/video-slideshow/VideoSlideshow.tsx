@@ -3,14 +3,16 @@ import { FPS } from "@/remotion/constants";
 import { VideoSlideshowTimeline } from "./types";
 import { getContainerStyleForVerticalAlign } from "@/remotion/utils";
 import { SimpleOutlinedText } from "@/remotion/components/SimpleOutlinedText";
+import { RoundedTextBox } from "@/remotion/components/RoundedTextBox";
 
 const DEFAULT_OVERLAY_COLOR = "black"
 const DEFAULT_OVERLAY_OPACITY = 0.6
 const DEFAULT_SLIDE_DURATION_SECONDS = 2.0
 
 
-export const VideoSlideshow: React.FC<VideoSlideshowTimeline> = ({ slides, slideDurationSeconds, backgroundMusicUrl, backgroundOverlayColor, backgroundOverlayOpacity }) => {
+export const VideoSlideshow: React.FC<VideoSlideshowTimeline> = ({ slides, slideDurationSeconds, backgroundMusicUrl, backgroundOverlayColor, backgroundOverlayOpacity, captionsType: ct }) => {
   const slideDurationFrames = (slideDurationSeconds || DEFAULT_SLIDE_DURATION_SECONDS) * FPS
+  const captionsType = ct || 'outlined'
 
   return (
     <AbsoluteFill style={{ backgroundColor: "black" }}>
@@ -26,8 +28,20 @@ export const VideoSlideshow: React.FC<VideoSlideshowTimeline> = ({ slides, slide
           </AbsoluteFill>
 
           <AbsoluteFill style={{...getContainerStyleForVerticalAlign(s.verticalAlign || 'center'), gap: 45, paddingLeft: 50, paddingRight: 50}}>
-            {s.title && <SimpleOutlinedText text={s.title} fontSize={80} isBold />}
-            <SimpleOutlinedText text={s.content} />
+            {captionsType === 'outlined' && <>
+              {s.title && <SimpleOutlinedText text={s.title} fontSize={80} isBold />}
+              <SimpleOutlinedText text={s.content} />
+            </>}
+
+            {captionsType === 'roundedTextbox' && <>
+              {s.title && <RoundedTextBox text={s.title}
+                textAlign="center"
+                borderRadius={30}
+                maxLines={Math.max(1, Math.ceil(s.title.split(/\s+/).filter(Boolean).length / 5))}
+                horizontalPadding={40}
+                verticalAlign={s.verticalAlign || 'center'} />
+              }
+            </>}
           </AbsoluteFill>
         </AbsoluteFill>
       </Sequence>)}
