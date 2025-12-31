@@ -113,7 +113,7 @@ function RemotionRoot() {
           slides: [
             {
               title: 'Top 10 best cities in UK to live in 2026',
-              content: 'Top 10 best cities in UK to live in 2026',
+              content: '',
               backgroundImageUrl: 'https://images.pexels.com/photos/34188665/pexels-photo-34188665.jpeg',
             },
             {

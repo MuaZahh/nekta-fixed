@@ -30,7 +30,7 @@ export const VideoSlideshow: React.FC<VideoSlideshowTimeline> = ({ slides, slide
           <AbsoluteFill style={{...getContainerStyleForVerticalAlign(s.verticalAlign || 'center'), gap: 45, paddingLeft: 50, paddingRight: 50}}>
             {captionsType === 'outlined' && <>
               {s.title && <SimpleOutlinedText text={s.title} fontSize={80} isBold />}
-              <SimpleOutlinedText text={s.content} />
+              {s.content && <SimpleOutlinedText text={s.content} />}
             </>}
 
             {captionsType === 'roundedTextbox' && <>
@@ -38,8 +38,14 @@ export const VideoSlideshow: React.FC<VideoSlideshowTimeline> = ({ slides, slide
                 textAlign="center"
                 borderRadius={30}
                 maxLines={Math.max(1, Math.ceil(s.title.split(/\s+/).filter(Boolean).length / 5))}
-                horizontalPadding={40}
-                verticalAlign={s.verticalAlign || 'center'} />
+                horizontalPadding={40} />
+              }
+
+              {s.content && <RoundedTextBox text={s.content}
+                textAlign="center"
+                borderRadius={30}
+                maxLines={Math.max(1, Math.ceil(s.content.split(/\s+/).filter(Boolean).length / 5))}
+                horizontalPadding={40} />
               }
             </>}
           </AbsoluteFill>

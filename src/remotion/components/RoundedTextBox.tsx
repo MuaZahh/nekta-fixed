@@ -2,8 +2,7 @@ import {loadFont} from '@remotion/google-fonts/Figtree';
 import {fitTextOnNLines, measureText} from '@remotion/layout-utils';
 import type {TextAlign} from '@remotion/rounded-text-box';
 import {createRoundedTextBox} from '@remotion/rounded-text-box';
-import React, {CSSProperties, useEffect, useState} from 'react';
-import {AbsoluteFill} from 'remotion';
+import React, {useEffect, useState} from 'react';
 
 type Props = {
 	readonly textAlign: TextAlign;
@@ -11,7 +10,6 @@ type Props = {
 	readonly borderRadius: number;
 	readonly horizontalPadding: number;
 	readonly text: string;
-  readonly verticalAlign: 'top' | 'center' | 'bottom'
 };
 
 const fontWeight = '700';
@@ -30,7 +28,6 @@ const RoundedTextBoxInner: React.FC<Props> = ({
 	borderRadius,
 	horizontalPadding,
 	text,
-  verticalAlign = 'top',
 }) => {
 	const {fontSize, lines} = fitTextOnNLines({
 		maxLines,
@@ -77,54 +74,32 @@ const RoundedTextBoxInner: React.FC<Props> = ({
 		[fontSize, textAlign, horizontalPadding],
 	);
 
-  const containerStyle: CSSProperties = {
-    alignItems: 'center',
-  }
-
-  if (verticalAlign === 'top') {
-    containerStyle.paddingTop = 150
-  }
-
-  if (verticalAlign === 'bottom') {
-    containerStyle.paddingBottom = 150
-    containerStyle.justifyContent = 'flex-end'
-  }
-
-  if (verticalAlign === 'center') {
-    containerStyle.justifyContent = 'center'
-  }
-
 	return (
-		<AbsoluteFill
-			style={containerStyle}
+		<div
+			style={{
+				width: boundingBox.width,
+				height: boundingBox.height,
+			}}
 		>
-			<div
+			<svg
+				viewBox={boundingBox.viewBox}
 				style={{
+					position: 'absolute',
 					width: boundingBox.width,
 					height: boundingBox.height,
+					overflow: 'visible',
 				}}
 			>
-				<svg
-					viewBox={boundingBox.viewBox}
-					style={{
-						position: 'absolute',
-						width: boundingBox.width,
-						height: boundingBox.height,
-						overflow: 'visible',
-					}}
-				>
-					<path fill="white" d={d} />
-				</svg>
-				<div style={{position: 'relative'}}>
-					{lines.map((line, i) => (
-						// eslint-disable-next-line react/no-array-index-key
-						<div key={i} style={lineStyle}>
-							{line}
-						</div>
-					))}
-				</div>
+				<path fill="white" d={d} />
+			</svg>
+			<div style={{position: 'relative'}}>
+				{lines.map((line, i) => (
+					<div key={i} style={lineStyle}>
+						{line}
+					</div>
+				))}
 			</div>
-		</AbsoluteFill>
+		</div>
 	);
 };
 

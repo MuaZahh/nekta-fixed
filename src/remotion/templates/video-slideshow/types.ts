@@ -3,7 +3,7 @@ import {z} from 'zod'
 
 export const simpleSlideSchema = z.object({
   title: z.string().optional(),
-  content: z.string(),
+  content: z.string().optional(),
   backgroundImageUrl: z.string().url(),
   verticalAlign: verticalAlignmentSchema.optional()
 })

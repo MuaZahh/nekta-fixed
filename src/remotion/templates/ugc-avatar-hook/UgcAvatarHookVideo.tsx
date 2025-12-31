@@ -4,6 +4,7 @@ import { RoundedTextBox } from "@/remotion/components/RoundedTextBox";
 import OutlinedCaptions from "@/remotion/components/OutlinedCaptions";
 import { UgcAvatarHookTimeline, UgcClip, ugcAvatarHookTimelineSchema } from "./types";
 import { FPS } from "@/remotion/constants";
+import { getContainerStyleForVerticalAlign } from "@/remotion/utils";
 import { useMemo } from "react";
 
 const SECONDS_PER_WORD = 0.3;
@@ -68,14 +69,15 @@ const Clip: React.FC<ClipProps> = ({ clip, startFrame, durationFrames }) => {
 
       {clip.captionsType === "roundedTextbox" && (
         <Sequence from={startFrame} durationInFrames={durationFrames}>
-          <RoundedTextBox
-            text={text}
-            textAlign="center"
-            borderRadius={30}
-            maxLines={Math.max(1, Math.ceil(text.split(/\s+/).filter(Boolean).length / 5))}
-            horizontalPadding={40}
-            verticalAlign={clip.captionsAlign}
-          />
+          <AbsoluteFill style={getContainerStyleForVerticalAlign(clip.captionsAlign)}>
+            <RoundedTextBox
+              text={text}
+              textAlign="center"
+              borderRadius={30}
+              maxLines={Math.max(1, Math.ceil(text.split(/\s+/).filter(Boolean).length / 5))}
+              horizontalPadding={40}
+            />
+          </AbsoluteFill>
         </Sequence>
       )}
 
