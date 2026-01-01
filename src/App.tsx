@@ -13,6 +13,8 @@ import { AIVideoPage } from "./pages/AIVideoPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { CaptionedVideoPage } from "./pages/CaptionedVideoPage";
 import { VideoSlideshowPage } from "./pages/VideoSlideshowPage";
+import { MusicVisualizationPage } from "./pages/MusicVisualizationPage";
+import { GenerateImagePage } from "./pages/GenerateImagePage";
 import { contentManager } from "./lib/contentManager";
 
 function App() {
@@ -38,6 +40,8 @@ function App() {
         {route === 'settings' && <SettingsPage />}
         {route === 'captioned-video' && <CaptionedVideoPage />}
         {route === 'video-slideshow' && <VideoSlideshowPage />}
+        {route === 'music-visualization' && <MusicVisualizationPage />}
+        {route === 'generate-image' && <GenerateImagePage />}
       </main>
     </div>
   );

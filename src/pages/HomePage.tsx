@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, AppRoute } from '../state/router'
 
-type ContentType = 'videos' | 'images' | 'other'
+type ContentType = 'videos' | 'images'
 
 interface Suggestion {
   id: string
@@ -13,26 +13,20 @@ interface Suggestion {
 const suggestions: Record<ContentType, Suggestion[]> = {
   videos: [
     { id: 'v1', title: 'AI Story', description: 'Generate narrated stories with AI voices and visuals', route: 'ai-video' },
-    { id: 'v6', title: 'Cpationed video', description: 'Create a video with captions and/or dialog', route: 'captioned-video' },
+    { id: 'v6', title: 'Captioned video', description: 'Create a video with captions and/or dialog', route: 'captioned-video' },
     { id: 'v2', title: 'UGC Avatar (hook + demo)', description: 'Great for marketing your eCom/SaaS/mobile app', route: 'ugc-avatar-hook' },
     { id: 'v3', title: 'Video Slideshow', description: 'Create slideshows with AI-generated images', route: 'video-slideshow' },
-    { id: 'v4', title: 'Add Captions', description: 'Add animated subtitles to your videos' },
+    { id: 'v4', title: 'Music Visualization', description: 'Create audio visualizations for your music', route: 'music-visualization' },
     { id: 'v5', title: 'Fake Texts', description: 'Create realistic text message conversation videos' },
   ],
   images: [
-    { id: 'i1', title: 'Upscale', description: 'Enhance image resolution with AI' },
-    { id: 'i2', title: 'Restore', description: 'Fix old or damaged photos automatically' },
-    { id: 'i3', title: 'Remove Background', description: 'Isolate subjects with one click' },
-  ],
-  other: [
-    { id: 'o1', title: 'Text to Speech', description: 'Convert text into natural-sounding voices' },
+    { id: 'i1', title: 'Generate Image', description: 'Create images with AI from text descriptions', route: 'generate-image' },
   ],
 }
 
 const tabs: { id: ContentType; label: string }[] = [
   { id: 'videos', label: 'Videos' },
   { id: 'images', label: 'Images' },
-  { id: 'other', label: 'Other' },
 ]
 
 export const HomePage = () => {
