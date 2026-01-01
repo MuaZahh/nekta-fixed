@@ -37,8 +37,6 @@ const MemoizedPlayer = React.memo(({ timeline, durationInFrames, aspectRatio }: 
   durationInFrames: number
   aspectRatio: string
 }) => {
-  console.log('>> PLAYER RENDER')
-  console.log(timeline)
 
   return <Player
     component={CaptionedVideo}

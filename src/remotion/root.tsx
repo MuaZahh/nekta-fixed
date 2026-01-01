@@ -8,6 +8,7 @@ import { captionedVideoTimelineSchema } from "./templates/captioned-video/types"
 import { UgcAvatarHookVideo, calculateUgcAvatarHookMetadata, ugcAvatarHookTimelineSchema } from "./templates/ugc-avatar-hook/UgcAvatarHookVideo";
 import { calculateVideoSlideshowMetadata, VideoSlideshow } from "./templates/video-slideshow/VideoSlideshow";
 import { videoSlideshowTimelineSchema } from "./templates/video-slideshow/types";
+import { MusicViz } from "./templates/music-viz/MusicViz";
 
 function RemotionRoot() {
   return (
@@ -125,6 +126,17 @@ function RemotionRoot() {
           ]
         }}
         calculateMetadata={calculateVideoSlideshowMetadata}
+      />
+
+      <Composition
+        id="MusicViz"
+        component={MusicViz}
+        schema={undefined}
+        durationInFrames={300}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={undefined}
       />
     </>
   );
