@@ -5,12 +5,14 @@ import { FPS } from "@/remotion/constants";
 
 type RotatingVinylProps = {
   coverUrl?: string
+  songTitle: string
+  author?: string
 }
 
 const {fontFamily} = loadFont()
 const {fontFamily: ralewayFaily} = loadRaleway()
 
-export const RotatingVinyl = ({coverUrl}:RotatingVinylProps) => {
+export const RotatingVinyl = ({coverUrl, songTitle, author}:RotatingVinylProps) => {
   const frame = useCurrentFrame();
   
   const rotation = (frame / 4500) * 360;
@@ -94,7 +96,7 @@ export const RotatingVinyl = ({coverUrl}:RotatingVinylProps) => {
           opacity: titleOpacity,
           transform: `translateY(${titleTranslateY}px)`
         }}>
-          Super cool and awesome song
+          {songTitle}
         </div>
 
         <div style={{
@@ -105,7 +107,7 @@ export const RotatingVinyl = ({coverUrl}:RotatingVinylProps) => {
           opacity: authorOpacity,
           transform: `translateY(${authorTranslateY}px)`
         }}>
-          Whitney Houston
+          {author}
         </div>
         
       </div>

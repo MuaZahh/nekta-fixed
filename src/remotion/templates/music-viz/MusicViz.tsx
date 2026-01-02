@@ -11,6 +11,7 @@ import { HillsVisualization } from "./waveforms/HillsVisualization";
 import { BarsVisualization } from "./waveforms/BarsVisualization";
 import { RadialBarsVisualization } from "./waveforms/RadialBarsVisualization";
 import { RotatingVinyl } from "./layouts/RotatingVinyl";
+import { RotatingDisk } from "./layouts/RotatingDisk";
 
 
 const combineValues = (length: number, sources: Array<number[]>): number[] => {
@@ -64,7 +65,9 @@ export const MusicViz: React.FC = ({ }) => {
   // optional: use only part of the values
   const frequencyData = visualizationValues.slice(0, 0.7 * nSamples);
 
-  return <RotatingVinyl coverUrl={coverUrl} />
+  return <RotatingDisk songTitle={audioName} author={author} />
+
+  return <RotatingVinyl coverUrl={coverUrl} songTitle={audioName} author={author} />
 
   return (
     <AbsoluteFill style={{ backgroundColor: "black", display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 100, paddingBottom: 100 }}>
