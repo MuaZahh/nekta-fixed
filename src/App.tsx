@@ -13,7 +13,7 @@ import { AIVideoPage } from "./pages/AIVideoPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { CaptionedVideoPage } from "./pages/CaptionedVideoPage";
 import { VideoSlideshowPage } from "./pages/VideoSlideshowPage";
-import { MusicVisualizationPage } from "./pages/MusicVisualizationPage";
+import { MusicVisualizationPage } from "./pages/music-visualization/MusicVisualizationPage";
 import { GenerateImagePage } from "./pages/GenerateImagePage";
 import { contentManager } from "./lib/contentManager";
 
