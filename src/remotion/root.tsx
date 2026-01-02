@@ -8,7 +8,8 @@ import { captionedVideoTimelineSchema } from "./templates/captioned-video/types"
 import { UgcAvatarHookVideo, calculateUgcAvatarHookMetadata, ugcAvatarHookTimelineSchema } from "./templates/ugc-avatar-hook/UgcAvatarHookVideo";
 import { calculateVideoSlideshowMetadata, VideoSlideshow } from "./templates/video-slideshow/VideoSlideshow";
 import { videoSlideshowTimelineSchema } from "./templates/video-slideshow/types";
-import { MusicViz } from "./templates/music-viz/MusicViz";
+import { calculateMusicVizMetadata, MusicViz } from "./templates/music-viz/MusicViz";
+import { musicVizTimelineSchema } from "./templates/music-viz/types";
 
 function RemotionRoot() {
   return (
@@ -131,12 +132,31 @@ function RemotionRoot() {
       <Composition
         id="MusicViz"
         component={MusicViz}
-        schema={undefined}
+        schema={musicVizTimelineSchema}
         durationInFrames={300}
         fps={FPS}
         width={1080}
         height={1920}
-        defaultProps={undefined}
+        defaultProps={{
+          layout: {
+            layout: 'big-cover',
+            coverUrl: 'https://cdn.nekta-studio.com/temp/cover_1.png',
+            backgroundColor: 'white'
+          },
+          audio: {
+            audioUrl: 'https://cdn.nekta-studio.com/temp/song_2.mp3',
+            startOffsetSeconds: 10,
+            durationSeconds: 30
+          },
+          songTitle: 'Christmas Knocking to the Door',
+          author: 'LesFM Prod',
+          waveform: {
+            type: 'circle-lines',
+            color: '#fc2c03'
+          },
+          textColor: 'black',
+        }}
+        calculateMetadata={calculateMusicVizMetadata}
       />
     </>
   );

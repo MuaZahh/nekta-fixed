@@ -1,4 +1,4 @@
-import {  useCurrentFrame } from "remotion";
+import {  CalculateMetadataFunction, Sequence, useCurrentFrame } from "remotion";
 import { FPS } from "@/remotion/constants";
 import { MediaUtilsAudioData, useAudioData, visualizeAudio } from "@remotion/media-utils";
 import { Audio } from "@remotion/media";
@@ -32,27 +32,7 @@ const visualizeMultipleAudio = ({
 };
 
 
-const coverUrl = 'https://cdn.nekta-studio.com/temp/cover_1.png'
-const audioUrl = 'https://cdn.nekta-studio.com/temp/song_2.mp3'
-const songTitle = 'Christmas Knocking to the Door'
-const author = 'LesFM Prod'
-
-const data:MusicVizTimeline = {
-  layout: 'big-cover',
-  audio: {
-    audioUrl: audioUrl
-  },
-  songTitle,
-  author,
-  coverUrl,
-  waveform: {
-    type: 'thick-bars-one-side',
-    color: '#fc2c03'
-  },
-} 
-
-export const MusicViz: React.FC = ({ }) => {
-  const {layout, audio, songTitle, author, waveform} = data
+export const MusicViz: React.FC<MusicVizTimeline> = ({ layout, audio, songTitle, author, waveform, textColor }) => {
   const frame = useCurrentFrame();
   const nSamples = 1024;
   const audioData = useAudioData(audio.audioUrl);
@@ -70,22 +50,39 @@ export const MusicViz: React.FC = ({ }) => {
 
   // optional: use only part of the values
   const frequencyData = visualizationValues.slice(0, 0.7 * nSamples);
+  const startOffsetFrames = Math.round(audio.startOffsetSeconds * FPS);
+  const durationFrames = Math.round(audio.durationSeconds * FPS);
 
   return (
     <>
-      {layout === 'big-cover' && <BigCover 
+      {layout.layout === 'big-cover' && <BigCover 
         songTitle={songTitle} 
         author={author} 
-        coverUrl={coverUrl!} 
+        coverUrl={layout.coverUrl} 
         frequencyData={frequencyData}
         waveform={waveform}
+        backgroundColor={layout.backgroundColor}
+        textColor={textColor}
       />}
 
-      {layout === 'rotating-disk' && <RotatingDisk songTitle={songTitle} author={author} />}
-      {layout === 'rotating-vinyl' && <RotatingVinyl coverUrl={coverUrl} songTitle={songTitle} author={author} />}
-
-      <Audio src={audioUrl} />
+      {layout.layout === 'rotating-disk' && <RotatingDisk songTitle={songTitle} author={author} textColor={textColor} />}
+      {layout.layout === 'rotating-vinyl' && <RotatingVinyl coverUrl={layout.coverUrl} songTitle={songTitle} author={author} textColor={textColor} />}
+        
+      <Audio 
+        src={audio.audioUrl} 
+        trimBefore={startOffsetFrames}
+        trimAfter={startOffsetFrames + durationFrames}
+      />
     </>
   );
 };
 
+
+export const calculateMusicVizMetadata: CalculateMetadataFunction<MusicVizTimeline> = async ({ props }) => {
+  return {
+    fps: FPS,
+    durationInFrames: Math.round(props.audio.durationSeconds * FPS),
+    height: 1920,
+    width: 1080,
+  };
+};

@@ -34,9 +34,10 @@ const AUTHOR_TRANSLATE_Y_START = 50;
 type RotatingDiskProps = {
   songTitle: string
   author?: string
+  textColor?: string
 }
 
-export const RotatingDisk = ({songTitle, author}: RotatingDiskProps) => {
+export const RotatingDisk = ({songTitle, author, textColor = 'white'}: RotatingDiskProps) => {
   const frame = useCurrentFrame();
   
   const cycleFrame = frame % DISK_CYCLE_DURATION;
@@ -106,6 +107,7 @@ export const RotatingDisk = ({songTitle, author}: RotatingDiskProps) => {
           left: DISK_LEFT,
           top: DISK_TOP
         }}
+        loop
       />
 
       {Array.from({ length: SPARK_COUNT }, (_, i) => {
@@ -143,7 +145,7 @@ export const RotatingDisk = ({songTitle, author}: RotatingDiskProps) => {
           fontFamily: ralewayFaily,
           fontSize: 90,
           fontWeight: 'bold',
-          color: 'white',
+          color: textColor,
           opacity: titleOpacity,
           transform: `translateY(${titleTranslateY}px)`
         }}>
@@ -154,7 +156,7 @@ export const RotatingDisk = ({songTitle, author}: RotatingDiskProps) => {
           fontFamily: ralewayFaily,
           fontSize: 60,
           fontWeight: 500,
-          color: 'white',
+          color: textColor,
           opacity: authorOpacity,
           transform: `translateY(${authorTranslateY}px)`
         }}>

@@ -8,6 +8,22 @@ export const musicLayoutTypeSchema = z.union([
 
 export type MusicLayoutTypeSchema = z.infer<typeof musicLayoutTypeSchema>
 
+export const layoutConfigSchema = z.discriminatedUnion("layout", [
+  z.object({
+    layout: z.literal("rotating-disk"),
+  }),
+  z.object({
+    layout: z.literal("rotating-vinyl"),
+    coverUrl: z.string().url(),
+  }),
+  z.object({
+    layout: z.literal("big-cover"),
+    coverUrl: z.string().url(),
+    backgroundColor: z.string().optional(),
+  }),
+]);
+
+export type LayoutConfig = z.infer<typeof layoutConfigSchema>;
 
 export const waveformTypeSchema = z.union([
   z.literal("thick-bars-one-side"),
@@ -25,7 +41,9 @@ export const waveformTypeSchema = z.union([
 export type WaveformType = z.infer<typeof waveformTypeSchema>
 
 export const musicVizAudioSchema = z.object({
-  audioUrl: z.string()
+  audioUrl: z.string(),
+  startOffsetSeconds: z.number(),
+  durationSeconds: z.number()
 })
 
 export const musicVizWaveformSchema = z.object({
@@ -37,12 +55,12 @@ export type MusicVizWaveformType = z.infer<typeof musicVizWaveformSchema>
 
 
 export const musicVizTimelineSchema = z.object({
-  layout: musicLayoutTypeSchema,
+  layout: layoutConfigSchema,
   audio: musicVizAudioSchema,
   songTitle: z.string(),
   author: z.string().optional(),
-  coverUrl: z.string().url().optional(),
-  waveform: musicVizWaveformSchema
+  waveform: musicVizWaveformSchema,
+  textColor: z.string().optional(),
 })
 
 export type MusicVizTimeline = z.infer<typeof musicVizTimelineSchema>

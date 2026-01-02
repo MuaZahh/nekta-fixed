@@ -3,14 +3,15 @@ import { loadFont as loadRaleway } from "@remotion/google-fonts/Raleway";
 import { FPS } from "@/remotion/constants";
 
 type RotatingVinylProps = {
-  coverUrl?: string
+  coverUrl: string
   songTitle: string
   author?: string
+  textColor?: string
 }
 
 const {fontFamily: ralewayFaily} = loadRaleway()
 
-export const RotatingVinyl = ({coverUrl, songTitle, author}:RotatingVinylProps) => {
+export const RotatingVinyl = ({coverUrl, songTitle, author, textColor = 'white'}:RotatingVinylProps) => {
   const frame = useCurrentFrame();
   
   const rotation = (frame / 4500) * 360;
@@ -90,7 +91,7 @@ export const RotatingVinyl = ({coverUrl, songTitle, author}:RotatingVinylProps) 
           fontFamily: ralewayFaily,
           fontSize: 90,
           fontWeight: 'bold',
-          color: 'white',
+          color: textColor,
           opacity: titleOpacity,
           transform: `translateY(${titleTranslateY}px)`
         }}>
@@ -101,7 +102,7 @@ export const RotatingVinyl = ({coverUrl, songTitle, author}:RotatingVinylProps) 
           fontFamily: ralewayFaily,
           fontSize: 60,
           fontWeight: 500,
-          color: 'white',
+          color: textColor,
           opacity: authorOpacity,
           transform: `translateY(${authorTranslateY}px)`
         }}>

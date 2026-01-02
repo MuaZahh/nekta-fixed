@@ -2,7 +2,7 @@ import { AbsoluteFill, Sequence, Img, CalculateMetadataFunction, useCurrentFrame
 import { FPS } from "@/remotion/constants";
 import ImageGlow from 'react-image-glow';
 import { loadFont as loadRaleway } from "@remotion/google-fonts/Raleway";
-import { MusicVizWaveformType, WaveformType } from "../types";
+import { MusicVizWaveformType } from "../types";
 import { renderWaveform } from "./utils";
 
 const {fontFamily: ralewayFaily} = loadRaleway()
@@ -101,7 +101,7 @@ export const BigCover = ({ coverUrl, songTitle, author, waveform, frequencyData,
         flexGrow: 1
       }} />
 
-      <div style={{paddingBottom: 180}}>
+      <div style={{paddingBottom: waveform.type === 'circle-lines' ? 120 : 180}}>
         {renderWaveform(waveform.type, frequencyData, waveform.color)}
       </div>
     </AbsoluteFill>
