@@ -37,6 +37,7 @@
     "@remotion/media": "4.0.382",
     "@remotion/player": "4.0.382",
     "@remotion/renderer": "4.0.382",
+    "@remotion/rive": "^4.0.382",
     "@remotion/rounded-text-box": "^4.0.382",
     "@remotion/zod-types": "4.0.382",
     "@uiw/react-color": "^2.9.2",

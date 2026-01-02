@@ -4,12 +4,13 @@ import { getContainerStyleForVerticalAlign } from "@/remotion/utils";
 import { SimpleOutlinedText } from "@/remotion/components/SimpleOutlinedText";
 import { RoundedTextBox } from "@/remotion/components/RoundedTextBox";
 import ImageGlow from 'react-image-glow';
-import { MediaUtilsAudioData, useAudioData, visualizeAudio } from "@remotion/media-utils";
+import { MediaUtilsAudioData, useAudioData, useWindowedAudioData, visualizeAudio } from "@remotion/media-utils";
 import { WaveVisualization } from "./waveforms/WaveVisualization";
 import { Audio } from "@remotion/media";
 import { HillsVisualization } from "./waveforms/HillsVisualization";
 import { BarsVisualization } from "./waveforms/BarsVisualization";
 import { RadialBarsVisualization } from "./waveforms/RadialBarsVisualization";
+import { RotatingVinyl } from "./layouts/RotatingVinyl";
 
 
 const combineValues = (length: number, sources: Array<number[]>): number[] => {
@@ -48,6 +49,7 @@ export const MusicViz: React.FC = ({ }) => {
   const nSamples = 512;
   const audioData = useAudioData(audioUrl);
 
+
   if (!audioData) {
     return null;
   }
@@ -61,6 +63,8 @@ export const MusicViz: React.FC = ({ }) => {
 
   // optional: use only part of the values
   const frequencyData = visualizationValues.slice(0, 0.7 * nSamples);
+
+  return <RotatingVinyl coverUrl={coverUrl} />
 
   return (
     <AbsoluteFill style={{ backgroundColor: "black", display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 100, paddingBottom: 100 }}>
