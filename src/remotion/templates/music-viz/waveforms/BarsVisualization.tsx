@@ -6,26 +6,44 @@ export const getBars = ({
 	totalWidth,
 	itemWidth,
 	frequencyData,
-	maxDb = -50,
-	minDb = -80,
+	maxDb = -30,
+	minDb = -100,
+	logScale = false,
+	sensitivity = 1,
 }: {
 	totalWidth: number;
 	itemWidth: number;
 	frequencyData: number[];
 	maxDb?: number;
 	minDb?: number;
+	logScale?: boolean;
+	sensitivity?: number;
 }) => {
 	const nBars = Math.floor(totalWidth / itemWidth);
 	const samples = frequencyData;
-	const sampleStep = Math.floor(samples.length / nBars);
 
 	const bars = Array.from({ length: nBars }).map((_, i) => {
+		let sampleIndex: number;
+
+		if (logScale) {
+			const minFreq = 1;
+			const maxFreq = samples.length;
+			const logMin = Math.log(minFreq);
+			const logMax = Math.log(maxFreq);
+			const logFreq = logMin + (i / (nBars - 1)) * (logMax - logMin);
+			sampleIndex = Math.floor(Math.exp(logFreq)) - 1;
+		} else {
+			const sampleStep = Math.floor(samples.length / nBars);
+			sampleIndex = (i * sampleStep) % samples.length;
+		}
+
 		const processed = processAudioFftValue(
-			samples[(i * sampleStep) % samples.length],
+			samples[Math.min(sampleIndex, samples.length - 1)],
 			{ maxDb, minDb }
 		);
 
-		return Math.log(1 + processed);
+		const scaled = Math.min(1, processed * sensitivity);
+		return scaled;
 	});
 
 	return bars;
@@ -96,6 +114,8 @@ export const BarsVisualization: React.FC<
 		frequencyData: number[];
 		maxDb?: number;
 		minDb?: number;
+		logScale?: boolean;
+		sensitivity?: number;
 	}
 > = ({
 	width,
@@ -108,6 +128,8 @@ export const BarsVisualization: React.FC<
 	placement = 'middle',
 	maxDb,
 	minDb,
+	logScale = false,
+	sensitivity = 1,
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const frame = useCurrentFrame();
@@ -128,6 +150,8 @@ export const BarsVisualization: React.FC<
 		frequencyData,
 		maxDb,
 		minDb,
+		logScale,
+		sensitivity,
 	});
 
 	return (
