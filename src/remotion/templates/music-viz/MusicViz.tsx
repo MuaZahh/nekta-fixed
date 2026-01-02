@@ -65,9 +65,9 @@ export const MusicViz: React.FC = ({ }) => {
   // optional: use only part of the values
   const frequencyData = visualizationValues.slice(0, 0.7 * nSamples);
 
-  return <RotatingDisk songTitle={audioName} author={author} />
+  // return <RotatingDisk songTitle={audioName} author={author} />
 
-  return <RotatingVinyl coverUrl={coverUrl} songTitle={audioName} author={author} />
+  // return <RotatingVinyl coverUrl={coverUrl} songTitle={audioName} author={author} />
 
   return (
     <AbsoluteFill style={{ backgroundColor: "black", display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 100, paddingBottom: 100 }}>

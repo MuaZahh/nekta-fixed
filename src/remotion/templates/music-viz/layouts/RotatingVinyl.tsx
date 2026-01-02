@@ -1,5 +1,4 @@
 import { AbsoluteFill, Img, useCurrentFrame, interpolate } from "remotion"
-import { loadFont } from "@remotion/google-fonts/Audiowide";
 import { loadFont as loadRaleway } from "@remotion/google-fonts/Raleway";
 import { FPS } from "@/remotion/constants";
 
@@ -9,7 +8,6 @@ type RotatingVinylProps = {
   author?: string
 }
 
-const {fontFamily} = loadFont()
 const {fontFamily: ralewayFaily} = loadRaleway()
 
 export const RotatingVinyl = ({coverUrl, songTitle, author}:RotatingVinylProps) => {
@@ -89,8 +87,8 @@ export const RotatingVinyl = ({coverUrl, songTitle, author}:RotatingVinylProps) 
       }}>
 
         <div style={{
-          fontFamily,
-          fontSize: 80,
+          fontFamily: ralewayFaily,
+          fontSize: 90,
           fontWeight: 'bold',
           color: 'white',
           opacity: titleOpacity,
