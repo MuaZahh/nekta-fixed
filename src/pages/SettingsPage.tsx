@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { EyeIcon, EyeSlashIcon, TrashIcon, FolderOpenIcon } from '@phosphor-icons/react'
+import { EyeIcon, EyeSlashIcon, TrashIcon, FolderOpenIcon, ArrowSquareOutIcon } from '@phosphor-icons/react'
 import { useSettingsStore } from '../state/settings'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,6 +18,7 @@ type ApiKeyDataItem = {
   type: AIProviderType
   icon: string
   iconSize: number
+  helpUrl: string
 }
 
 const apiKeyData: ApiKeyDataItem[] = [
@@ -26,19 +27,21 @@ const apiKeyData: ApiKeyDataItem[] = [
     type: 'openai',
     icon: openaiIcon,
     iconSize: 24,
+    helpUrl: 'https://docs.nekta-studio.com/openai'
   },
   {
     name: 'Together.AI',
     type: 'togetherai',
     icon: togetherIcon,
     iconSize: 18,
+    helpUrl: 'https://docs.nekta-studio.com/together'
   },
-  {
-    name: 'ElevenLabs',
-    type: 'elevenlabs',
-    icon: elevenLabsIcon,
-    iconSize: 24,
-  }
+  // {
+  //   name: 'ElevenLabs',
+  //   type: 'elevenlabs',
+  //   icon: elevenLabsIcon,
+  //   iconSize: 24,
+  // }
 ]
 
 type CacheStats = {
@@ -119,26 +122,36 @@ export const SettingsPage = () => {
                     </div>
                     <Label>{item.name}</Label>
                   </div>
-                  <div className="relative">
-                    <Input
-                      type={revealedKeys[item.type] ? 'text' : 'password'}
-                      value={apiKeys[item.type] || ''}
-                      onChange={(e) => setApiKey(item.type, e.target.value)}
-                      placeholder={`Enter ${item.name} API key`}
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => toggleReveal(item.type)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 transition-colors"
-                      aria-label={revealedKeys[item.type] ? 'Hide API key' : 'Show API key'}
+                  <div className='flex items-center gap-2'>
+                    <div className="relative grow">
+                      <Input
+                        type={revealedKeys[item.type] ? 'text' : 'password'}
+                        value={apiKeys[item.type] || ''}
+                        onChange={(e) => setApiKey(item.type, e.target.value)}
+                        placeholder={`Enter ${item.name} API key`}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleReveal(item.type)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 transition-colors"
+                        aria-label={revealedKeys[item.type] ? 'Hide API key' : 'Show API key'}
+                      >
+                        {revealedKeys[item.type] ? (
+                          <EyeSlashIcon size={18} />
+                        ) : (
+                          <EyeIcon size={18} />
+                        )}
+                      </button>
+                    </div>
+
+                    <Button
+                      className='shrink-0'
+                      onClick={() => window.open(item.helpUrl, '_blank')}
                     >
-                      {revealedKeys[item.type] ? (
-                        <EyeSlashIcon size={18} />
-                      ) : (
-                        <EyeIcon size={18} />
-                      )}
-                    </button>
+                      <ArrowSquareOutIcon size={18} />
+                      Help
+                    </Button>
                   </div>
                 </div>
               ))}

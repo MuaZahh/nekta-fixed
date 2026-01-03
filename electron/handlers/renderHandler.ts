@@ -398,6 +398,50 @@ ipcMain.handle(
   }
 );
 
+ipcMain.handle(
+  "EXPORT_IMAGE",
+  async (_event, options: { mediaUrl: string; defaultName?: string }) => {
+    try {
+      const { mediaUrl, defaultName } = options;
+
+      // Extract file path from media:// URL
+      if (!mediaUrl.startsWith("media://")) {
+        throw new Error("Invalid media URL format");
+      }
+
+      const encodedPath = mediaUrl.slice("media://".length);
+      const sourcePath = decodeURIComponent(encodedPath);
+
+      if (!fs.existsSync(sourcePath)) {
+        throw new Error("Source file not found");
+      }
+
+      const ext = path.extname(sourcePath).slice(1) || "png";
+      const fileName = defaultName || `image_${Date.now()}`;
+
+      const result = await dialog.showSaveDialog({
+        defaultPath: path.join(os.homedir(), "Downloads", `${fileName}.${ext}`),
+        filters: [{ name: "Image", extensions: [ext] }],
+      });
+
+      if (result.canceled || !result.filePath) {
+        return { success: false, canceled: true };
+      }
+
+      fs.copyFileSync(sourcePath, result.filePath);
+      shell.showItemInFolder(result.filePath);
+
+      return { success: true, filePath: result.filePath };
+    } catch (error) {
+      log.error("Failed to export image:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+);
+
 ipcMain.handle("SELECT_IMAGE", async () => {
   try {
     const result = await dialog.showOpenDialog({
