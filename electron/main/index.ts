@@ -97,7 +97,18 @@ async function createWindow() {
     win.webContents.openDevTools();
   } else {
     win.loadFile(indexHtml);
+    // DEBUG: Uncomment to debug production builds
+    win.webContents.openDevTools();
   }
+
+  // Catch renderer errors
+  win.webContents.on('render-process-gone', (event, details) => {
+    console.error('Renderer process gone:', details);
+  });
+
+  win.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('Failed to load:', errorCode, errorDescription);
+  });
 
   // Test actively push message to the Electron-Renderer
   win.webContents.on("did-finish-load", () => {

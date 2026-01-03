@@ -30,9 +30,28 @@ const formatBytes = (bytes: number): string => {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
 }
 
-export const AppUpdateIndicator = () => {
-  const [state, setState] = useState<UpdateState>('idle')
-  const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null)
+interface AppUpdateIndicatorProps {
+  testMode?: boolean
+}
+
+const TEST_DATA = {
+  state: 'available' as UpdateState,
+  versionInfo: {
+    update: true,
+    version: '1.0.0',
+    newVersion: '1.0.1',
+  },
+  progress: {
+    percent: 45,
+    bytesPerSecond: 2500000,
+    total: 150000000,
+    transferred: 67500000,
+  },
+}
+
+export const AppUpdateIndicator = ({ testMode = false }: AppUpdateIndicatorProps) => {
+  const [state, setState] = useState<UpdateState>(testMode ? TEST_DATA.state : 'idle')
+  const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(testMode ? TEST_DATA.versionInfo : null)
   const [progress, setProgress] = useState<ProgressInfo | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [dismissed, setDismissed] = useState(false)
@@ -95,8 +114,8 @@ export const AppUpdateIndicator = () => {
     setDismissed(true)
   }, [])
 
-  // Don't show if idle, checking briefly, or dismissed
-  if (state === 'idle' || (state === 'checking') || dismissed) {
+  // Don't show if idle, checking briefly, or dismissed (unless in test mode)
+  if (!testMode && (state === 'idle' || state === 'checking' || dismissed)) {
     return null
   }
 

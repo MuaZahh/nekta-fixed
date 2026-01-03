@@ -145,7 +145,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release_on_${{ matrix.os }}
-          path: release/
+          path: |
+            release/**/*.dmg
+            release/**/*.zip
+            release/**/*.exe
+            release/**/*.AppImage
+            release/**/*.snap
+            release/**/*.deb
+            release/**/*.yml
+            release/**/*.yaml
+            release/**/*.blockmap
           retention-days: 5
 
   deploy:
@@ -171,13 +180,20 @@ jobs:
         run: |
           mkdir -p release-files
 
-          # Copy all release files from each platform
+          # Only copy distributable files, skip unpacked directories
           for dir in artifacts/release_on_*/; do
             if [ -d "$dir" ]; then
-              # Find the version directory and copy its contents
-              find "$dir" -mindepth 1 -maxdepth 1 -type d | while read version_dir; do
-                cp -r "$version_dir"/* release-files/ 2>/dev/null || true
-              done
+              find "$dir" -type f \( \
+                -name "*.dmg" -o \
+                -name "*.zip" -o \
+                -name "*.exe" -o \
+                -name "*.AppImage" -o \
+                -name "*.snap" -o \
+                -name "*.deb" -o \
+                -name "*.yml" -o \
+                -name "*.yaml" -o \
+                -name "*.blockmap" \
+              \) -exec cp {} release-files/ \;
             fi
           done
 
