@@ -10,6 +10,7 @@
   },
   files: ["dist-electron", "dist", "out"],
   afterPack: "./scripts/afterPack.cjs",
+  afterAllArtifactBuild: "./scripts/generateManifest.cjs",
   mac: {
     artifactName: "${productName}_${version}.${ext}",
     target: ["dmg", "zip"],
@@ -40,8 +41,12 @@
     category: "AudioVideo",
   },
   publish: {
-    provider: "generic",
+    provider: "s3",
+    bucket: "${env.R2_BUCKET}",
+    endpoint: "https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
+    region: "auto",
+    acl: null,
+    path: "/builds/${version}",
     channel: "latest",
-    url: "https://github.com/electron-vite/electron-vite-react/releases/download/v0.9.9/",
   },
 }

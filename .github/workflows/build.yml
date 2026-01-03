@@ -15,7 +15,91 @@ on:
       - "!.github/workflows/build.yml"
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.determine.outputs.version }}
+      should_update: ${{ steps.determine.outputs.should_update }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Get package.json version
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Fetch current manifest from R2
+        id: manifest
+        run: |
+          MANIFEST_URL="${{ vars.RELEASES_BASE_URL }}/app-build-manifest.json"
+          echo "Fetching manifest from: $MANIFEST_URL"
+
+          HTTP_STATUS=$(curl -s -o manifest.json -w "%{http_code}" "$MANIFEST_URL" || echo "000")
+
+          if [ "$HTTP_STATUS" = "200" ] && [ -f manifest.json ]; then
+            CURRENT_VERSION=$(node -p "JSON.parse(require('fs').readFileSync('manifest.json', 'utf8')).version" 2>/dev/null || echo "0.0.0")
+            echo "Current published version: $CURRENT_VERSION"
+          else
+            CURRENT_VERSION="0.0.0"
+            echo "No manifest found, starting from 0.0.0"
+          fi
+
+          echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Determine version
+        id: determine
+        run: |
+          PKG_VERSION="${{ steps.pkg.outputs.version }}"
+          CURRENT_VERSION="${{ steps.manifest.outputs.current }}"
+
+          echo "Package version: $PKG_VERSION"
+          echo "Current published: $CURRENT_VERSION"
+
+          # Compare versions using node
+          RESULT=$(node -e "
+            const semver = {
+              parse: (v) => v.split('.').map(Number),
+              compare: (a, b) => {
+                const pa = semver.parse(a);
+                const pb = semver.parse(b);
+                for (let i = 0; i < 3; i++) {
+                  if (pa[i] > pb[i]) return 1;
+                  if (pa[i] < pb[i]) return -1;
+                }
+                return 0;
+              },
+              increment: (v) => {
+                const parts = semver.parse(v);
+                parts[2]++;
+                return parts.join('.');
+              }
+            };
+
+            const pkgVersion = '$PKG_VERSION';
+            const currentVersion = '$CURRENT_VERSION';
+
+            if (semver.compare(pkgVersion, currentVersion) > 0) {
+              // Package version is higher, use it
+              console.log(JSON.stringify({ version: pkgVersion, shouldUpdate: false }));
+            } else {
+              // Package version is same or lower, increment current
+              const newVersion = semver.increment(currentVersion);
+              console.log(JSON.stringify({ version: newVersion, shouldUpdate: true }));
+            }
+          ")
+
+          VERSION=$(echo "$RESULT" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).version")
+          SHOULD_UPDATE=$(echo "$RESULT" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).shouldUpdate")
+
+          echo "Final version: $VERSION"
+          echo "Should update package.json: $SHOULD_UPDATE"
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "should_update=$SHOULD_UPDATE" >> $GITHUB_OUTPUT
+
   build:
+    needs: version
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -31,6 +115,10 @@ jobs:
         with:
           node-version: 22
 
+      - name: Update version in package.json
+        if: needs.version.outputs.should_update == 'true'
+        run: npm version ${{ needs.version.outputs.version }} --no-git-tag-version --allow-same-version
+
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
 
@@ -44,12 +132,14 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          RELEASES_BASE_URL: ${{ vars.RELEASES_BASE_URL }}
 
       - name: Build Release Files (Windows/Linux)
         if: matrix.os != 'macos-latest'
         run: npm run build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASES_BASE_URL: ${{ vars.RELEASES_BASE_URL }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -57,3 +147,69 @@ jobs:
           name: release_on_${{ matrix.os }}
           path: release/
           retention-days: 5
+
+  deploy:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect release files
+        id: collect
+        run: |
+          mkdir -p release-files
+
+          # Copy all release files from each platform
+          for dir in artifacts/release_on_*/; do
+            if [ -d "$dir" ]; then
+              # Find the version directory and copy its contents
+              find "$dir" -mindepth 1 -maxdepth 1 -type d | while read version_dir; do
+                cp -r "$version_dir"/* release-files/ 2>/dev/null || true
+              done
+            fi
+          done
+
+          echo "out-dir=release-files" >> $GITHUB_OUTPUT
+          echo "Files to upload:"
+          ls -la release-files/
+
+      - name: Generate combined manifest
+        env:
+          RELEASES_BASE_URL: ${{ vars.RELEASES_BASE_URL }}
+        run: |
+          node scripts/generateCombinedManifest.cjs release-files ${{ needs.version.outputs.version }}
+          # Copy manifest to separate dir for root upload
+          mkdir -p manifest-only
+          cp release-files/app-build-manifest.json manifest-only/
+
+      - name: Upload builds to R2
+        uses: ryand56/r2-upload-action@latest
+        with:
+          r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          r2-bucket: ${{ secrets.R2_BUCKET }}
+          source-dir: ${{ steps.collect.outputs.out-dir }}
+          destination-dir: ./builds/${{ needs.version.outputs.version }}
+
+      - name: Upload manifest to R2 root
+        uses: ryand56/r2-upload-action@latest
+        with:
+          r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          r2-bucket: ${{ secrets.R2_BUCKET }}
+          source-dir: manifest-only
+          destination-dir: ./
