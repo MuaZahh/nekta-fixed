@@ -41,12 +41,8 @@
     category: "AudioVideo",
   },
   publish: {
-    provider: "s3",
-    bucket: "${env.R2_BUCKET}",
-    endpoint: "https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
-    region: "auto",
-    acl: null,
-    path: "/builds/${version}",
+    provider: "generic",
+    url: "https://cdn.nekta-studio.com",
     channel: "latest",
   },
 }

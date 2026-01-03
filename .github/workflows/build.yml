@@ -190,9 +190,17 @@ jobs:
           RELEASES_BASE_URL: ${{ vars.RELEASES_BASE_URL }}
         run: |
           node scripts/generateCombinedManifest.cjs release-files ${{ needs.version.outputs.version }}
-          # Copy manifest to separate dir for root upload
-          mkdir -p manifest-only
-          cp release-files/app-build-manifest.json manifest-only/
+
+      - name: Prepare root files for upload
+        run: |
+          # Copy files that need to be at bucket root (for electron-updater)
+          mkdir -p root-files
+          cp release-files/app-build-manifest.json root-files/
+          cp release-files/latest-mac.yml root-files/ 2>/dev/null || true
+          cp release-files/latest.yml root-files/ 2>/dev/null || true
+          cp release-files/latest-linux.yml root-files/ 2>/dev/null || true
+          echo "Root files to upload:"
+          ls -la root-files/
 
       - name: Upload builds to R2
         uses: ryand56/r2-upload-action@latest
@@ -204,12 +212,12 @@ jobs:
           source-dir: ${{ steps.collect.outputs.out-dir }}
           destination-dir: ./builds/${{ needs.version.outputs.version }}
 
-      - name: Upload manifest to R2 root
+      - name: Upload root files to R2
         uses: ryand56/r2-upload-action@latest
         with:
           r2-account-id: ${{ secrets.R2_ACCOUNT_ID }}
           r2-access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
           r2-secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           r2-bucket: ${{ secrets.R2_BUCKET }}
-          source-dir: manifest-only
+          source-dir: root-files
           destination-dir: ./

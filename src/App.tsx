@@ -5,6 +5,7 @@ import { LoginScreen } from "./components/login/LoginScreen";
 import { Sidebar } from "./components/sidebar/Sidebar";
 import { BrowserDownloadModal } from "./components/browser-download/BrowserDownloadModal";
 import { ContentDownloadIndicator } from "./components/shared/ContentDownloadIndicator";
+import { AppUpdateIndicator } from "./components/shared/AppUpdateIndicator";
 import { HomePage } from "./pages/HomePage";
 import { UgcAvatarHookPage } from "./pages/UgcAvatarHook";
 import { LibraryPage } from "./pages/LibraryPage";
@@ -29,6 +30,7 @@ function App() {
       <LoginScreen />
       <BrowserDownloadModal />
       <ContentDownloadIndicator />
+      <AppUpdateIndicator />
 
       <Sidebar />
 
