@@ -2,6 +2,10 @@ import React, { useRef, useEffect, useCallback, useState } from 'react'
 import { PlayIcon, PauseIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 
+const BAR_WIDTH = 2
+const BAR_COUNT = 110
+const WAVEFORM_HEIGHT = 40
+
 interface AudioRegionSelectorProps {
   audioUrl: string
   duration: number
@@ -80,14 +84,6 @@ export const AudioRegionSelector: React.FC<AudioRegionSelectorProps> = ({
     return () => audio.removeEventListener('timeupdate', handleTimeUpdate)
   }, [regionEnd, regionStart, onPlayPause])
 
-  const getPositionFromX = useCallback((clientX: number): number => {
-    if (!containerRef.current || duration === 0) return 0
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = clientX - rect.left
-    const ratio = Math.max(0, Math.min(1, x / rect.width))
-    return ratio * duration
-  }, [duration])
-
   const handleMouseDown = useCallback((e: React.MouseEvent, type: 'start' | 'end' | 'region') => {
     e.preventDefault()
     setDragging(type)
@@ -149,111 +145,119 @@ export const AudioRegionSelector: React.FC<AudioRegionSelectorProps> = ({
   const regionDuration = regionEnd - regionStart
 
   // Generate fake waveform bars
-  const barCount = 80
-  const bars = Array.from({ length: barCount }, (_, i) => {
+  const bars = Array.from({ length: BAR_COUNT }, (_, i) => {
     const seed = i * 7919 + 104729
-    const height = 20 + (Math.sin(seed) * 0.5 + 0.5) * 60
+    const height = 20 + (Math.sin(seed) * 0.5 + 0.5) * 40
     return height
   })
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       <audio ref={audioRef} src={audioUrl} preload="metadata" />
 
-      {/* Waveform container */}
-      <div
-        ref={containerRef}
-        className="relative h-20 bg-neutral-100 rounded-xl overflow-hidden cursor-pointer select-none"
-      >
-        {/* Fake waveform visualization */}
-        <div className="absolute inset-0 flex items-center justify-center gap-[2px] px-2">
-          {bars.map((height, i) => {
-            const barPercent = (i / barCount) * 100
-            const isInRegion = barPercent >= startPercent && barPercent <= endPercent
-            return (
-              <div
-                key={i}
-                className="flex-1 rounded-full transition-colors duration-150"
-                style={{
-                  height: `${height}%`,
-                  backgroundColor: isInRegion ? '#3b82f6' : '#d1d5db',
-                  opacity: isInRegion ? 1 : 0.5,
-                }}
-              />
-            )
-          })}
-        </div>
-
-        {/* Dimmed regions outside selection */}
-        <div
-          className="absolute inset-y-0 left-0 bg-white/60 pointer-events-none"
-          style={{ width: `${startPercent}%` }}
-        />
-        <div
-          className="absolute inset-y-0 right-0 bg-white/60 pointer-events-none"
-          style={{ width: `${100 - endPercent}%` }}
-        />
-
-        {/* Draggable region (middle area) */}
-        <div
-          className="absolute inset-y-0 cursor-grab active:cursor-grabbing"
-          style={{
-            left: `${startPercent}%`,
-            right: `${100 - endPercent}%`,
-          }}
-          onMouseDown={(e) => handleMouseDown(e, 'region')}
-        />
-
-        {/* Playback position indicator */}
-        {isPlaying && playbackPosition >= regionStart && playbackPosition <= regionEnd && (
-          <div
-            className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none z-20"
-            style={{ left: `${playbackPercent}%` }}
-          />
-        )}
-
-        {/* Start handle */}
-        <div
-          className="absolute top-0 bottom-0 w-3 cursor-ew-resize z-10 flex items-center justify-center group"
-          style={{ left: `calc(${startPercent}% - 6px)` }}
-          onMouseDown={(e) => handleMouseDown(e, 'start')}
-        >
-          <div className="w-1.5 h-10 bg-blue-600 rounded-full group-hover:bg-blue-700 group-active:bg-blue-800 shadow-md" />
-        </div>
-
-        {/* End handle */}
-        <div
-          className="absolute top-0 bottom-0 w-3 cursor-ew-resize z-10 flex items-center justify-center group"
-          style={{ left: `calc(${endPercent}% - 6px)` }}
-          onMouseDown={(e) => handleMouseDown(e, 'end')}
-        >
-          <div className="w-1.5 h-10 bg-blue-600 rounded-full group-hover:bg-blue-700 group-active:bg-blue-800 shadow-md" />
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="flex items-center justify-between">
+      {/* Row: Play button + Waveform */}
+      <div className="flex items-center gap-2">
         <Button
-          variant="outline"
           size="sm"
           onClick={onPlayPause}
           disabled={duration === 0}
-          className="gap-1.5"
+          className="p-0 flex-shrink-0"
+          style={{ width: WAVEFORM_HEIGHT, height: WAVEFORM_HEIGHT }}
         >
-          {isPlaying ? <PauseIcon size={16} weight="fill" /> : <PlayIcon size={16} weight="fill" />}
-          {isPlaying ? 'Pause' : 'Play Region'}
+          {isPlaying ? <PauseIcon size={18} weight="fill" /> : <PlayIcon size={18} weight="fill" />}
         </Button>
 
-        <div className="flex items-center gap-4 text-sm text-neutral-600">
-          <span>
-            <span className="text-neutral-400">Offset:</span>{' '}
-            <span className="font-medium text-neutral-900">{formatTime(regionStart)}</span>
-          </span>
-          <span>
-            <span className="text-neutral-400">Duration:</span>{' '}
-            <span className="font-medium text-neutral-900">{formatTime(regionDuration)}</span>
-          </span>
+        {/* Waveform container with padding for edge handles */}
+        <div className="flex-1 px-1.5">
+          <div
+            ref={containerRef}
+            className="relative cursor-pointer select-none"
+            style={{ height: WAVEFORM_HEIGHT }}
+          >
+            {/* Background + Waveform (clipped) */}
+            <div className="absolute inset-0 bg-neutral-100 rounded-xl overflow-hidden">
+              {/* Fake waveform visualization */}
+              <div className="absolute inset-0 flex items-center justify-between px-2">
+                {bars.map((height, i) => {
+                  const barPercent = (i / BAR_COUNT) * 100
+                  const isInRegion = barPercent >= startPercent && barPercent <= endPercent
+                  return (
+                    <div
+                      key={i}
+                      className="rounded-full flex-shrink-0 transition-colors duration-150"
+                      style={{
+                        width: BAR_WIDTH,
+                        height: `${height}%`,
+                        backgroundColor: isInRegion ? '#7C7C7C' : '#d1d5db',
+                        opacity: isInRegion ? 1 : 0.5,
+                      }}
+                    />
+                  )
+                })}
+              </div>
+
+              {/* Dimmed regions outside selection */}
+              <div
+                className="absolute inset-y-0 left-0 bg-white/60 pointer-events-none"
+                style={{ width: `${startPercent}%` }}
+              />
+              <div
+                className="absolute inset-y-0 right-0 bg-white/60 pointer-events-none"
+                style={{ width: `${100 - endPercent}%` }}
+              />
+            </div>
+
+            {/* Draggable region (middle area) */}
+            <div
+              className="absolute inset-y-0 cursor-grab active:cursor-grabbing"
+              style={{
+                left: `${startPercent}%`,
+                right: `${100 - endPercent}%`,
+              }}
+              onMouseDown={(e) => handleMouseDown(e, 'region')}
+            />
+
+            {/* Playback position indicator */}
+            {isPlaying && playbackPosition >= regionStart && playbackPosition <= regionEnd && (
+              <div
+                className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none z-20"
+                style={{ left: `${playbackPercent}%` }}
+              />
+            )}
+
+            {/* Start handle - outside overflow-hidden so not clipped */}
+            <div
+              className="absolute top-0 bottom-0 w-3 cursor-ew-resize z-10 flex items-center justify-center group"
+              style={{ left: `calc(${startPercent}% - 6px)` }}
+              onMouseDown={(e) => handleMouseDown(e, 'start')}
+            >
+              <div
+                className="w-1.5 bg-gray-800 rounded-full group-hover:bg-gray-700 group-active:bg-gray-800 shadow-md"
+                style={{ height: WAVEFORM_HEIGHT }}
+              />
+            </div>
+
+            {/* End handle - outside overflow-hidden so not clipped */}
+            <div
+              className="absolute top-0 bottom-0 w-3 cursor-ew-resize z-10 flex items-center justify-center group"
+              style={{ left: `calc(${endPercent}% - 6px)` }}
+              onMouseDown={(e) => handleMouseDown(e, 'end')}
+            >
+              <div
+                className="w-1.5 bg-gray-800 rounded-full group-hover:bg-gray-700 group-active:bg-gray-800 shadow-md"
+                style={{ height: WAVEFORM_HEIGHT }}
+              />
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Duration display */}
+      <div className="flex items-center justify-end text-sm text-neutral-600">
+        <span>
+          <span className="text-neutral-400">Duration:</span>{' '}
+          <span className="font-medium text-neutral-900">{formatTime(regionDuration)}</span>
+        </span>
       </div>
     </div>
   )

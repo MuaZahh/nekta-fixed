@@ -17,7 +17,7 @@ const suggestions: Record<ContentType, Suggestion[]> = {
     { id: 'v2', title: 'UGC Avatar (hook + demo)', description: 'Great for marketing your eCom/SaaS/mobile app', route: 'ugc-avatar-hook' },
     { id: 'v3', title: 'Video Slideshow', description: 'Create slideshows with AI-generated images', route: 'video-slideshow' },
     { id: 'v4', title: 'Music Visualization', description: 'Create audio visualizations for your music', route: 'music-visualization' },
-    { id: 'v5', title: 'Fake Texts', description: 'Create realistic text message conversation videos' },
+    // { id: 'v5', title: 'Fake Texts', description: 'Create realistic text message conversation videos' },
   ],
   images: [
     { id: 'i1', title: 'Generate Image', description: 'Create images with AI from text descriptions', route: 'generate-image' },

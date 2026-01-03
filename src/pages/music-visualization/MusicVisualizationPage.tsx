@@ -3,10 +3,11 @@ import React, { useEffect, useMemo, useRef, useCallback, useState } from 'react'
 import {
   DownloadSimpleIcon,
   VideoCameraIcon,
-  CircleNotchIcon,
   ImageIcon,
   MusicNoteIcon,
+  FolderOpenIcon,
 } from '@phosphor-icons/react'
+import { useRouter } from '@/state/router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -86,6 +87,7 @@ const MemoizedPlayer = React.memo(({ timeline, durationInFrames }: {
 })
 
 export const MusicVisualizationPage = () => {
+  const setRoute = useRouter((state) => state.setRoute)
   const store = useMusicVisualizationStore()
   const mediaServerPortRef = useRef<number | null>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
@@ -276,7 +278,6 @@ export const MusicVisualizationPage = () => {
                 <div className="flex flex-col gap-2">
                   <Label>Audio File</Label>
                   <Button
-                    variant="outline"
                     onClick={() => audioInputRef.current?.click()}
                     className="w-full justify-start gap-2"
                   >
@@ -367,7 +368,7 @@ export const MusicVisualizationPage = () => {
 
             {/* Layout Section */}
             <Section title="Layout">
-              <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>Layout Style</Label>
                   <Select
@@ -388,45 +389,6 @@ export const MusicVisualizationPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {showCoverUpload && (
-                  <div className="flex flex-col gap-2">
-                    <Label>Cover Image *</Label>
-                    {store.coverUrl ? (
-                      <div className="relative">
-                        <img
-                          src={transformMediaUrl(store.coverUrl, mediaServerPortRef.current)}
-                          alt="Cover"
-                          className="w-32 h-32 object-cover rounded-lg border"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => coverInputRef.current?.click()}
-                          className="absolute bottom-2 right-2"
-                        >
-                          Change
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        onClick={() => coverInputRef.current?.click()}
-                        className="w-full justify-start gap-2"
-                      >
-                        <ImageIcon size={18} />
-                        Upload Cover Image
-                      </Button>
-                    )}
-                    <input
-                      ref={coverInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCoverFileSelect}
-                      className="hidden"
-                    />
-                  </div>
-                )}
 
                 {showBackgroundColor && (
                   <div className="flex flex-col gap-2">
@@ -461,11 +423,50 @@ export const MusicVisualizationPage = () => {
                   </div>
                 )}
               </div>
+
+              {showCoverUpload && (
+                <div className="flex flex-col gap-2">
+                  <Label>Cover Image *</Label>
+                  {store.coverUrl ? (
+                    <div className="relative">
+                      <img
+                        src={transformMediaUrl(store.coverUrl, mediaServerPortRef.current)}
+                        alt="Cover"
+                        className="w-32 h-32 object-cover rounded-lg border"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => coverInputRef.current?.click()}
+                        className="absolute bottom-2 right-2"
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={() => coverInputRef.current?.click()}
+                      className="w-full justify-start gap-2"
+                    >
+                      <ImageIcon size={18} />
+                      Upload Cover Image
+                    </Button>
+                  )}
+                  <input
+                    ref={coverInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverFileSelect}
+                    className="hidden"
+                  />
+                </div>
+              )}
             </Section>
 
             {/* Waveform Section */}
             <Section title="Waveform">
-              <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>Waveform Style</Label>
                   <Select
@@ -525,7 +526,7 @@ export const MusicVisualizationPage = () => {
         </div>
 
         {/* Right panel - Preview */}
-        <div className="w-[30%] flex-shrink-0 border-l border-neutral-100 p-3 flex flex-col items-center justify-center overflow-hidden gap-2 bg-neutral-50">
+        <div className="w-[30%] flex-shrink-0 border-l border-neutral-100 p-3 flex flex-col items-center justify-center overflow-hidden gap-2">
           <Label>Preview</Label>
           {canPreview && timeline ? (
             <MemoizedPlayer
@@ -549,38 +550,63 @@ export const MusicVisualizationPage = () => {
             </div>
           )}
 
-          <Button
-            variant="default"
-            className="w-full max-w-[180px]"
-            size="sm"
-            onClick={handleExport}
-            disabled={!canExport}
-          >
-            {store.isRendering ? (
-              <CircleNotchIcon className="animate-spin" />
-            ) : (
-              <DownloadSimpleIcon />
-            )}
-            {store.isRendering ? 'Exporting...' : 'Export Video'}
-          </Button>
-
-          {store.renderProgress && (
-            <div className="w-full max-w-[180px] text-center">
-              <div className="w-full bg-neutral-200 rounded-full h-1.5 mb-1">
-                <div
-                  className="bg-blue-500 h-1.5 rounded-full transition-all"
-                  style={{ width: `${store.renderProgress.progress * 100}%` }}
-                />
-              </div>
-              <span className="text-xs text-neutral-500">
-                {Math.round(store.renderProgress.progress * 100)}%
-              </span>
+          {store.renderError && (
+            <div className="w-full bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
+              <p className="font-medium">Error: {store.renderError.name}</p>
+              <p className="mt-1">{store.renderError.message}</p>
             </div>
           )}
 
-          {store.renderError && (
-            <div className="w-full bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs">
-              {store.renderError.message}
+          {store.isRendering && store.renderProgress ? (
+            <div className="w-full bg-white rounded-xl p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-neutral-700">
+                  {store.renderProgress.stitchStage === 'encoding' ? 'Encoding' : 'Muxing Audio'}
+                </span>
+                <span className="text-xs font-medium text-neutral-900">
+                  {Math.round(store.renderProgress.progress * 100)}%
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-black rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${Math.round(store.renderProgress.progress * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between mt-2 text-xs text-neutral-500">
+                <span>
+                  Frames: {store.renderProgress.renderedFrames} / {durationInFrames}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full flex flex-col gap-2 items-center">
+              {store.renderProgress && !store.isRendering && store.renderProgress.progress === 1 && (
+                <>
+                  <p className="text-neutral-900 font-medium text-center text-sm">
+                    Render Complete!
+                  </p>
+                  <Button
+                    variant="default"
+                    className="border w-full max-w-[180px]"
+                    size="sm"
+                    onClick={() => setRoute('library')}
+                  >
+                    <FolderOpenIcon />
+                    Open Library
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="default"
+                className="border w-full max-w-[180px]"
+                size="sm"
+                onClick={handleExport}
+                disabled={!canExport}
+              >
+                <DownloadSimpleIcon />
+                Export Video
+              </Button>
             </div>
           )}
         </div>
