@@ -109,39 +109,58 @@ exports.default = async function (context) {
     }
 
     const dirs = fs.readdirSync(remotionPath);
-    const compositorDir = dirs.find((d) =>
+    const compositorDirs = dirs.filter((d) =>
       d.startsWith("compositor-darwin")
     );
 
-    if (!compositorDir) {
-      console.log("⚠️  Compositor directory not found, skipping");
+    if (compositorDirs.length === 0) {
+      console.log("⚠️  No compositor directories found, skipping");
       return;
     }
 
-    const compositorPath = path.join(remotionPath, compositorDir);
-    console.log(`📁 Compositor directory: ${compositorPath}`);
+    // Process each compositor directory (for universal builds, there may be multiple)
+    for (const compositorDir of compositorDirs) {
+      const compositorPath = path.join(remotionPath, compositorDir);
+      console.log(`\n📁 Processing compositor directory: ${compositorPath}`);
 
-    // Update each binary
-    for (const binary of binaries) {
-      const binaryPath = path.join(compositorPath, binary);
+      // Determine the vendor directory based on the compositor architecture
+      const vendorDirName = compositorDir.includes("arm64")
+        ? "compositor-darwin-arm64"
+        : "compositor-darwin-x64";
+      const vendorDir = path.join(__dirname, "..", "vendor", vendorDirName);
+      const vendorRemotionBinary = path.join(vendorDir, "remotion");
+      const targetRemotionBinary = path.join(compositorPath, "remotion");
 
-      if (!fs.existsSync(binaryPath)) {
-        console.log(`   ⏭️  Skipping ${binary} (not found)`);
-        continue;
+      if (fs.existsSync(vendorRemotionBinary)) {
+        console.log(`🔄 Replacing remotion binary with headerpad-enabled version (${vendorDirName})`);
+        fs.copyFileSync(vendorRemotionBinary, targetRemotionBinary);
+        console.log(`   ✅ Copied: ${vendorRemotionBinary} -> ${targetRemotionBinary}`);
+      } else {
+        console.log(`   ⚠️  Vendor remotion binary not found at: ${vendorRemotionBinary}`);
       }
 
-      for (const lib of ffmpegLibs) {
-        const command = `install_name_tool -change ${lib} @loader_path/${lib} "${binaryPath}"`;
-        try {
-          execSync(command, { stdio: "pipe" });
-        } catch (error) {
-          // Some libs might not be referenced by all binaries
+      // Update each binary
+      for (const binary of binaries) {
+        const binaryPath = path.join(compositorPath, binary);
+
+        if (!fs.existsSync(binaryPath)) {
+          console.log(`   ⏭️  Skipping ${binary} (not found)`);
+          continue;
         }
+
+        for (const lib of ffmpegLibs) {
+          const command = `install_name_tool -change ${lib} @loader_path/${lib} "${binaryPath}"`;
+          try {
+            execSync(command, { stdio: "pipe" });
+          } catch (error) {
+            // Some libs might not be referenced by all binaries
+          }
+        }
+        console.log(`   ✅ Updated ${binary}`);
       }
-      console.log(`   ✅ Updated ${binary}`);
     }
 
-    console.log("✅ FFmpeg library paths fixed successfully!\n");
+    console.log("\n✅ FFmpeg library paths fixed successfully!\n");
   } catch (error) {
     console.error(`❌ Error fixing FFmpeg paths: ${error.message}\n`);
   }

@@ -12,8 +12,11 @@
   afterPack: "./scripts/afterPack.cjs",
   afterAllArtifactBuild: "./scripts/generateManifest.cjs",
   mac: {
-    artifactName: "${productName}_${version}.${ext}",
-    target: ["dmg", "zip"],
+    artifactName: "${productName}_${version}_${arch}.${ext}",
+    target: [
+      { target: "dmg", arch: ["universal"] },
+      { target: "zip", arch: ["universal"] }
+    ],
     hardenedRuntime: true,
     gatekeeperAssess: false,
     entitlements: "build/entitlements.mac.plist",
