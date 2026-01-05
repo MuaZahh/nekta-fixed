@@ -211,12 +211,25 @@ jobs:
 
       - name: Prepare root files for upload
         run: |
+          VERSION="${{ needs.version.outputs.version }}"
+
           # Copy files that need to be at bucket root (for electron-updater)
           mkdir -p root-files
           cp release-files/app-build-manifest.json root-files/
-          cp release-files/latest-mac.yml root-files/ 2>/dev/null || true
-          cp release-files/latest.yml root-files/ 2>/dev/null || true
-          cp release-files/latest-linux.yml root-files/ 2>/dev/null || true
+
+          # Copy and fix yml files - add builds/{version}/ prefix to path and url fields
+          for yml in latest-mac.yml latest.yml latest-linux.yml; do
+            if [ -f "release-files/$yml" ]; then
+              # Update path and url fields to include builds/{version}/ prefix
+              # Handle both root-level "path:" and nested "- url:" in files array
+              sed -e "s|^path: |path: builds/${VERSION}/|g" \
+                  -e "s|^  - url: |  - url: builds/${VERSION}/|g" \
+                  "release-files/$yml" > "root-files/$yml"
+              echo "Fixed $yml:"
+              cat "root-files/$yml"
+            fi
+          done
+
           echo "Root files to upload:"
           ls -la root-files/
 
