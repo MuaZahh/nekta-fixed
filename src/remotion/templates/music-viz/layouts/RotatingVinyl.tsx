@@ -1,17 +1,21 @@
 import { AbsoluteFill, Img, useCurrentFrame, interpolate } from "remotion"
 import { loadFont as loadRaleway } from "@remotion/google-fonts/Raleway";
 import { FPS } from "@/remotion/constants";
+import { MusicVizWaveformType } from "../types";
+import { renderWaveform } from "./utils";
 
 type RotatingVinylProps = {
   coverUrl: string
   songTitle: string
   author?: string
   textColor?: string
+  waveform: MusicVizWaveformType
+  frequencyData: number[]
 }
 
 const {fontFamily: ralewayFaily} = loadRaleway()
 
-export const RotatingVinyl = ({coverUrl, songTitle, author, textColor = 'white'}:RotatingVinylProps) => {
+export const RotatingVinyl = ({coverUrl, songTitle, author, textColor = 'white', waveform, frequencyData}:RotatingVinylProps) => {
   const frame = useCurrentFrame();
   
   const rotation = (frame / 4500) * 360;
@@ -84,7 +88,7 @@ export const RotatingVinyl = ({coverUrl, songTitle, author, textColor = 'white'}
         gap: 70,
         padding: 90,
         zIndex: 10,
-        paddingBottom: 250
+        paddingBottom: 450
       }}>
 
         <div style={{
@@ -108,7 +112,19 @@ export const RotatingVinyl = ({coverUrl, songTitle, author, textColor = 'white'}
         }}>
           {author}
         </div>
-        
+
+      </div>
+
+      <div style={{
+        position: 'absolute',
+        bottom: waveform.type === 'circle-lines' ? 100 : 200,
+        left: 0,
+        right: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        zIndex: 11
+      }}>
+        {renderWaveform(waveform.type, frequencyData, waveform.color)}
       </div>
     </AbsoluteFill>
   );

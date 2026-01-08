@@ -58,6 +58,7 @@ type State = {
 type Actions = {
   // Slide actions
   addSlide: () => void
+  addSlideWithText: (text: string) => void
   deleteSlide: (uid: string) => void
   updateSlideText: (uid: string, text: string) => void
   updateSlideVoice: (uid: string, voice: string) => void
@@ -126,6 +127,16 @@ export const useCaptionedVideoStore = create<State & Actions>()(
         state.slides.push({
           uid: crypto.randomUUID(),
           text: '',
+          voice: state.defaultVoice,
+          characterMode: 'none',
+        })
+      }),
+
+    addSlideWithText: (text: string) =>
+      set((state) => {
+        state.slides.push({
+          uid: crypto.randomUUID(),
+          text,
           voice: state.defaultVoice,
           characterMode: 'none',
         })

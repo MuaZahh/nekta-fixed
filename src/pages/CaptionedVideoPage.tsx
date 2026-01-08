@@ -1,5 +1,5 @@
 import { Player } from '@remotion/player'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   PlusIcon,
   DownloadSimpleIcon,
@@ -19,6 +19,7 @@ import Chrome from '@uiw/react-color-chrome'
 import { CaptionedVideoSlide } from './captioned-video/CaptionedVideoSlide'
 import { CharacterPickerModal } from './captioned-video/CharacterPickerModal'
 import { BackgroundPicker } from './captioned-video/BackgroundPicker'
+import { GenerateContentModal } from './captioned-video/GenerateContentModal'
 import { CaptionedVideo } from '@/remotion/templates/captioned-video/CaptionedVideo'
 import { CaptionedVideoTimeline, CaptionedVideoBackground, captionedVideoTimelineSchema } from '@/remotion/templates/captioned-video/types'
 import { OpenAITTSProvider } from '@/lib/providers/openAI'
@@ -65,6 +66,7 @@ export const CaptionedVideoPage = () => {
   const setRoute = useRouter((state) => state.setRoute)
   const store = useCaptionedVideoStore()
   const mediaServerPortRef = useRef<number | null>(null)
+  const [generateModalOpen, setGenerateModalOpen] = useState(false)
 
   useEffect(() => {
     return () => store.reset()
@@ -357,7 +359,15 @@ export const CaptionedVideoPage = () => {
               </div>
             </Section>
 
-            <Section title="Video Content">
+            <Section
+              title="Video Content"
+              rightElement={
+                <Button variant="default" size="sm" className="h-7" onClick={() => setGenerateModalOpen(true)}>
+                  <SparkleIcon size={14} weight="fill" />
+                  Generate
+                </Button>
+              }
+            >
               <div className="flex flex-col gap-3">
                 <Label>Slides</Label>
                 {store.slides.map((slide, index) => (
@@ -488,6 +498,10 @@ export const CaptionedVideoPage = () => {
       </div>
 
       <CharacterPickerModal />
+      <GenerateContentModal
+        open={generateModalOpen}
+        onClose={() => setGenerateModalOpen(false)}
+      />
     </div>
   )
 }

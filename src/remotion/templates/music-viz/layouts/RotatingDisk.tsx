@@ -2,6 +2,8 @@ import { Video } from "@remotion/media"
 import { AbsoluteFill, useCurrentFrame, interpolate, Img, random } from "remotion"
 import { FPS } from "@/remotion/constants";
 import { loadFont as loadRaleway } from "@remotion/google-fonts/Raleway";
+import { MusicVizWaveformType } from "../types";
+import { renderWaveform } from "./utils";
 
 const {fontFamily: ralewayFaily} = loadRaleway()
 
@@ -35,9 +37,11 @@ type RotatingDiskProps = {
   songTitle: string
   author?: string
   textColor?: string
+  waveform: MusicVizWaveformType
+  frequencyData: number[]
 }
 
-export const RotatingDisk = ({songTitle, author, textColor = 'white'}: RotatingDiskProps) => {
+export const RotatingDisk = ({songTitle, author, textColor = 'white', waveform, frequencyData}: RotatingDiskProps) => {
   const frame = useCurrentFrame();
   
   const cycleFrame = frame % DISK_CYCLE_DURATION;
@@ -138,7 +142,7 @@ export const RotatingDisk = ({songTitle, author, textColor = 'white'}: RotatingD
         gap: 70,
         padding: 90,
         zIndex: 10,
-        paddingBottom: 250
+        paddingBottom: 450
       }}>
 
         <div style={{
@@ -162,7 +166,19 @@ export const RotatingDisk = ({songTitle, author, textColor = 'white'}: RotatingD
         }}>
           {author}
         </div>
-        
+
+      </div>
+
+      <div style={{
+        position: 'absolute',
+        bottom: waveform.type === 'circle-lines' ? 100 : 200,
+        left: 0,
+        right: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        zIndex: 11
+      }}>
+        {renderWaveform(waveform.type, frequencyData, waveform.color)}
       </div>
     </AbsoluteFill>
   );

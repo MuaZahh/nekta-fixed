@@ -65,8 +65,8 @@ export const MusicViz: React.FC<MusicVizTimeline> = ({ layout, audio, songTitle,
         textColor={textColor}
       />}
 
-      {layout.layout === 'rotating-disk' && <RotatingDisk songTitle={songTitle} author={author} textColor={textColor} />}
-      {layout.layout === 'rotating-vinyl' && <RotatingVinyl coverUrl={layout.coverUrl} songTitle={songTitle} author={author} textColor={textColor} />}
+      {layout.layout === 'rotating-disk' && <RotatingDisk songTitle={songTitle} author={author} textColor={textColor} waveform={waveform} frequencyData={frequencyData} />}
+      {layout.layout === 'rotating-vinyl' && <RotatingVinyl coverUrl={layout.coverUrl} songTitle={songTitle} author={author} textColor={textColor} waveform={waveform} frequencyData={frequencyData} />}
         
       <Audio 
         src={audio.audioUrl} 
