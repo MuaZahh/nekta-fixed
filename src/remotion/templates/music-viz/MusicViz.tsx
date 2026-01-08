@@ -1,4 +1,4 @@
-import {  CalculateMetadataFunction, Sequence, useCurrentFrame } from "remotion";
+import { CalculateMetadataFunction, useCurrentFrame } from "remotion";
 import { FPS } from "@/remotion/constants";
 import { MediaUtilsAudioData, useAudioData, visualizeAudio } from "@remotion/media-utils";
 import { Audio } from "@remotion/media";

@@ -122,6 +122,12 @@ jobs:
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Install both Remotion compositor architectures (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          # npm only installs optional deps for current arch, but we need both for universal builds
+          npm install @remotion/compositor-darwin-x64@4.0.382 @remotion/compositor-darwin-arm64@4.0.382 --legacy-peer-deps --no-save
+
       - name: Build Release Files (macOS)
         if: matrix.os == 'macos-latest'
         run: npm run build
