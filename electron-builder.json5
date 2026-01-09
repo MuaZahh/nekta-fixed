@@ -4,7 +4,11 @@
 {
   appId: "dev.webmonch.nekta",
   asar: true,
-  asarUnpack: ["out/remotion-bundle/**/*", "node_modules/@remotion/compositor-*/**/*", "node_modules/better-sqlite3/**/*"],
+  asarUnpack: [
+    "out/remotion-bundle/**/*",
+    "node_modules/@remotion/compositor-*/**/*",
+    "node_modules/better-sqlite3/**/*",
+  ],
   directories: {
     output: "release/${version}",
   },
@@ -15,13 +19,15 @@
     artifactName: "${productName}_${version}_${arch}.${ext}",
     target: [
       { target: "dmg", arch: ["universal"] },
-      { target: "zip", arch: ["universal"] }
+      { target: "zip", arch: ["universal"] },
     ],
     hardenedRuntime: true,
     gatekeeperAssess: false,
     entitlements: "build/entitlements.mac.plist",
     entitlementsInherit: "build/entitlements.mac.plist",
     notarize: true,
+    x64ArchFiles: "Contents/Resources/app.asar.unpacked/node_modules/@remotion/compositor-darwin-x64/**/*",
+    singleArchFiles: "Contents/Resources/app.asar.unpacked/node_modules/@remotion/compositor-darwin-arm64/**/*",
   },
   win: {
     target: [
