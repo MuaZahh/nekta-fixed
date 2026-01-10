@@ -103,11 +103,10 @@ All rendered videos are stored in the Library. Play, preview, download, or delet
 
 To use AI features (image/video generation, voiceover), you'll need API keys from one or more providers:
 
-| Provider        | Used For                              | Docs                                                   |
-| --------------- | ------------------------------------- | ------------------------------------------------------ |
-| **OpenAI**      | Text generation, images, voiceover    | [Setup guide](https://docs.nekta-studio.com/openai)    |
-| **Together.AI** | Image/video generation, transcription | [Setup guide](https://docs.nekta-studio.com/together)  |
-| **Replicate**   | Image/video generation                | [Setup guide](https://docs.nekta-studio.com/replicate) |
+| Provider        | Used For                              | Docs                                                  |
+| --------------- | ------------------------------------- | ----------------------------------------------------- |
+| **OpenAI**      | Text generation, images, voiceover    | [Setup guide](https://docs.nekta-studio.com/openai)   |
+| **Together.AI** | Image/video generation, transcription | [Setup guide](https://docs.nekta-studio.com/together) |
 
 ---
 
