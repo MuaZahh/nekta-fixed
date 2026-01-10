@@ -76,6 +76,9 @@ Create audio visualizations for your music. Choose from 3 layout styles (big cov
 <p align="center">
   <img src="https://image.mux.com/YbW8q7SGBhwHeHOO5SjgL8eeKzkE801V004QslkUwVzVM/animated.gif?width=200" width="150" />
   <img src="https://image.mux.com/V4eamlhEUP3nWfMlcaL00iCBGXwjRmdZG3iG1QWzid2Y/animated.gif?width=200" width="150" />
+
+  <img src="https://image.mux.com/8woap02RRYPeCmF4Vq8UyqLLOhMjv69VKrR1xCqEWiMQ/animated.gif?width=200" width="150" />
+  <img src="https://image.mux.com/1cCsmuTPeCsSBfPlcILB6fmCxUKDZlOVRCI88GPfUlc/animated.gif?width=200" width="150" />
 </p>
 
 [Full documentation](https://docs.nekta-studio.com/music-video)
@@ -94,11 +97,11 @@ All rendered videos are stored in the Library. Play, preview, download, or delet
 
 To use AI features (image/video generation, voiceover), you'll need API keys from one or more providers:
 
-| Provider | Used For | Docs |
-|----------|----------|------|
-| **OpenAI** | Text generation, images, voiceover | [Setup guide](https://docs.nekta-studio.com/openai) |
-| **Together.AI** | Image/video generation, transcription | [Setup guide](https://docs.nekta-studio.com/together) |
-| **Replicate** | Image/video generation | [Setup guide](https://docs.nekta-studio.com/replicate) |
+| Provider        | Used For                              | Docs                                                   |
+| --------------- | ------------------------------------- | ------------------------------------------------------ |
+| **OpenAI**      | Text generation, images, voiceover    | [Setup guide](https://docs.nekta-studio.com/openai)    |
+| **Together.AI** | Image/video generation, transcription | [Setup guide](https://docs.nekta-studio.com/together)  |
+| **Replicate**   | Image/video generation                | [Setup guide](https://docs.nekta-studio.com/replicate) |
 
 ---
 
