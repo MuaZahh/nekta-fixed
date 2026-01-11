@@ -45,6 +45,19 @@ const layoutOptions: { value: MusicLayoutTypeSchema; label: string }[] = [
   { value: 'rotating-disk', label: 'Rotating Disk' },
 ]
 
+const layoutAttributions: Record<string, { title: string; author: string; url: string }> = {
+  'rotating-disk': {
+    title: 'Retro Disk',
+    author: 'adalpan',
+    url: 'https://rive.app/marketplace/23293-43605-retro-disk/',
+  },
+  'rotating-vinyl': {
+    title: 'Vinyl Stream App',
+    author: 'Novikoff',
+    url: 'https://rive.app/marketplace/10020-19118-vinyl-stream-app/',
+  },
+}
+
 const waveformOptions: { value: WaveformType; label: string }[] = [
   { value: 'thick-bars-one-side', label: 'Thick Bars (One Side)' },
   { value: 'thin-bars-one-side', label: 'Thin Bars (One Side)' },
@@ -460,6 +473,23 @@ export const MusicVisualizationPage = () => {
                     onChange={handleCoverFileSelect}
                     className="hidden"
                   />
+                </div>
+              )}
+
+              {layoutAttributions[store.layoutType] && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-neutral-100 rounded-lg text-xs text-neutral-500">
+                  <span>
+                    Based on{' '}
+                    <a
+                      href={layoutAttributions[store.layoutType].url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-neutral-700"
+                    >
+                      {layoutAttributions[store.layoutType].title}
+                    </a>{' '}
+                    by {layoutAttributions[store.layoutType].author} (CC BY 4.0), modified.
+                  </span>
                 </div>
               )}
             </Section>
