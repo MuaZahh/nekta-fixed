@@ -508,8 +508,10 @@ ipcMain.handle("SELECT_IMAGE", async () => {
   }
 });
 
-ipcMain.handle("SELECT_BACKGROUND_MEDIA", async () => {
+ipcMain.handle("SELECT_BACKGROUND_MEDIA", async (_event, options?: { category?: string }) => {
   try {
+    const category = options?.category || "background";
+
     const result = await dialog.showOpenDialog({
       properties: ["openFile"],
       filters: [
@@ -562,11 +564,11 @@ ipcMain.handle("SELECT_BACKGROUND_MEDIA", async () => {
         fileName,
         mimeType,
         size: stats.size,
-        category: "uploaded_background",
+        category,
       })
       .run();
 
-    log.info("Copied uploaded background to:", destPath);
+    log.info(`Copied uploaded media (category: ${category}) to:`, destPath);
 
     return {
       ok: true,
@@ -585,13 +587,15 @@ ipcMain.handle("SELECT_BACKGROUND_MEDIA", async () => {
   }
 });
 
-ipcMain.handle("GET_UPLOADED_BACKGROUNDS", async () => {
+ipcMain.handle("GET_UPLOADED_BACKGROUNDS", async (_event, options?: { category?: string }) => {
   try {
+    const category = options?.category || "background";
+
     const db = getDb();
     const files = db
       .select()
       .from(schema.cacheFiles)
-      .where(eq(schema.cacheFiles.category, "uploaded_background"))
+      .where(eq(schema.cacheFiles.category, category))
       .all();
 
     const activeFiles = files.filter((f) => !f.deletedAt);

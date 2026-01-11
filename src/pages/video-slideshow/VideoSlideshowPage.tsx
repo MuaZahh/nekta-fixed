@@ -32,13 +32,14 @@ import { useVideoSlideshowStore } from './store'
 import { SlideshowSlideType } from './types'
 import { SlideCard } from './SlideCard'
 import { GenerateSlidesModal } from './GenerateSlidesModal'
+import { ApiKeysModal } from '@/components/shared/ApiKeysModal'
 import { getGenerateSlideshowPrompt, SlideshowSlides } from './service'
 import { VideoSlideshow } from '@/remotion/templates/video-slideshow/VideoSlideshow'
 import { VideoSlideshowTimeline, videoSlideshowTimelineSchema } from '@/remotion/templates/video-slideshow/types'
 import { OpenAIStructuredGenProvider, OpenAIImageGenProvider } from '@/lib/providers/openAI'
 import { TogetherAIImageGenProvider } from '@/lib/providers/togetherAI'
 import { useSettingsStore } from '@/state/settings'
-import { getModels, ModelResult, GetModelsResult } from '@/lib/modelHelpers'
+import { getModels, ModelResult } from '@/lib/modelHelpers'
 import { VerticalAlignmentType } from '@/remotion/types'
 
 const ASPECT_RATIO = '9:16'
@@ -86,32 +87,22 @@ export const VideoSlideshowPage = () => {
   const store = useVideoSlideshowStore()
   const apiKeys = useSettingsStore((state) => state.apiKeys)
   const mediaServerPortRef = React.useRef<number | null>(null)
+  const [apiKeysModalOpen, setApiKeysModalOpen] = React.useState(false)
+  const [pendingAction, setPendingAction] = React.useState<'generate' | 'preview' | 'save' | null>(null)
+  const [pendingSlideUid, setPendingSlideUid] = React.useState<string | null>(null)
 
-  const connectedProviders = useMemo(() => {
-    return Object.entries(apiKeys)
-      .filter(([, value]) => value && value.length > 0)
-      .map(([key]) => key)
-  }, [apiKeys])
-
-  const enabledModelsData = useMemo(() => {
-    const allModelsData = getModels({ ratios: [ASPECT_RATIO] })
-    const result: GetModelsResult = {}
-    for (const [providerId, providerData] of Object.entries(allModelsData)) {
-      if (connectedProviders.includes(providerId)) {
-        result[providerId] = providerData
-      }
-    }
-    return result
-  }, [connectedProviders])
+  const allModelsData = useMemo(() => {
+    return getModels({ ratios: [ASPECT_RATIO] })
+  }, [])
 
   useEffect(() => {
-    const allModels = Object.values(enabledModelsData).flatMap(p => p.models)
+    const allModels = Object.values(allModelsData).flatMap(p => p.models)
     const isCurrentModelValid = allModels.some(m => m.modelId === store.settings.imageModel)
 
     if (!isCurrentModelValid && allModels.length > 0) {
       store.setImageModel(allModels[0].modelId)
     }
-  }, [enabledModelsData, store.settings.imageModel])
+  }, [allModelsData, store.settings.imageModel])
 
   useEffect(() => {
     return () => store.reset()
@@ -348,6 +339,64 @@ export const VideoSlideshowPage = () => {
     store.setSlides(newSlides)
   }
 
+  const hasRequiredApiKeys = !!apiKeys.openai?.trim()
+
+  const handleGenerateSlidesClick = () => {
+    if (!hasRequiredApiKeys) {
+      setPendingAction('generate')
+      setApiKeysModalOpen(true)
+      return
+    }
+    store.setGenerateModalOpen(true)
+  }
+
+  const handleSlideGenerateImage = async (uid: string) => {
+    if (!hasRequiredApiKeys) {
+      setPendingSlideUid(uid)
+      setApiKeysModalOpen(true)
+      return
+    }
+    await onGenerateImage(uid)
+  }
+
+  const handleGeneratePreviewClick = () => {
+    if (!hasRequiredApiKeys) {
+      setPendingAction('preview')
+      setApiKeysModalOpen(true)
+      return
+    }
+    onGeneratePreview()
+  }
+
+  const handleSaveVideoClick = () => {
+    if (!hasRequiredApiKeys) {
+      setPendingAction('save')
+      setApiKeysModalOpen(true)
+      return
+    }
+    onSaveVideo()
+  }
+
+  const handleApiKeysModalContinue = () => {
+    if (pendingAction === 'generate') {
+      store.setGenerateModalOpen(true)
+    } else if (pendingAction === 'preview') {
+      onGeneratePreview()
+    } else if (pendingAction === 'save') {
+      onSaveVideo()
+    } else if (pendingSlideUid) {
+      onGenerateImage(pendingSlideUid)
+    }
+    setPendingAction(null)
+    setPendingSlideUid(null)
+  }
+
+  const handleApiKeysModalClose = () => {
+    setApiKeysModalOpen(false)
+    setPendingAction(null)
+    setPendingSlideUid(null)
+  }
+
   const canGeneratePreview = store.slides.length > 0 && store.slides.some(s => s.imageDesc || s.imageUrl)
 
   return (
@@ -438,7 +487,7 @@ export const VideoSlideshowPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(enabledModelsData).map(([providerId, providerData]) => (
+                    {Object.entries(allModelsData).map(([providerId, providerData]) => (
                       <SelectGroup key={providerId}>
                         <SelectLabel>{providerData.providerName}</SelectLabel>
                         {providerData.models.map((m) => (
@@ -448,11 +497,6 @@ export const VideoSlideshowPage = () => {
                         ))}
                       </SelectGroup>
                     ))}
-                    {Object.keys(enabledModelsData).length === 0 && (
-                      <SelectGroup>
-                        <SelectLabel className="text-neutral-400">No providers configured</SelectLabel>
-                      </SelectGroup>
-                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -472,7 +516,7 @@ export const VideoSlideshowPage = () => {
             <Section
               title="Slides"
               rightElement={
-                <Button variant="default" size="sm" className='h-7' onClick={() => store.setGenerateModalOpen(true)}>
+                <Button variant="default" size="sm" className='h-7' onClick={handleGenerateSlidesClick}>
                   <SparkleIcon size={14} weight="fill" />
                   Generate
                 </Button>
@@ -489,7 +533,7 @@ export const VideoSlideshowPage = () => {
                     onContentChange={store.updateSlideContent}
                     onImageDescChange={store.updateSlideImageDesc}
                     onVerticalAlignChange={store.updateSlideVerticalAlign}
-                    onGenerateImage={onGenerateImage}
+                    onGenerateImage={handleSlideGenerateImage}
                     onImageUpload={onImageUpload}
                   />
                 ))}
@@ -528,7 +572,7 @@ export const VideoSlideshowPage = () => {
               variant="default"
               className="border w-full max-w-[180px]"
               size="sm"
-              onClick={onGeneratePreview}
+              onClick={handleGeneratePreviewClick}
               disabled={!canGeneratePreview || store.previewGenerating}
             >
               {store.previewGenerating ? (
@@ -603,7 +647,7 @@ export const VideoSlideshowPage = () => {
                 variant="default"
                 className="border w-full max-w-[180px]"
                 size="sm"
-                onClick={onSaveVideo}
+                onClick={handleSaveVideoClick}
                 disabled={!canGeneratePreview || store.previewGenerating || store.isRendering}
               >
                 <DownloadSimpleIcon />
@@ -618,6 +662,12 @@ export const VideoSlideshowPage = () => {
         open={store.generateModalOpen}
         onClose={() => store.setGenerateModalOpen(false)}
         onGenerate={onGenerateSlides}
+      />
+
+      <ApiKeysModal
+        open={apiKeysModalOpen}
+        onClose={handleApiKeysModalClose}
+        onContinue={handleApiKeysModalContinue}
       />
     </div>
   )

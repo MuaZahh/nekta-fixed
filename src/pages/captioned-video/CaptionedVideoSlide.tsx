@@ -4,14 +4,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { ButtonGroup, ButtonGroupSeparator } from '@/components/ui/button-group'
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   TrashIcon,
   ImageIcon,
   SpeakerHighIcon,
@@ -21,7 +13,6 @@ import {
   XIcon,
 } from '@phosphor-icons/react'
 import { useCaptionedVideoStore } from './store'
-import { CharacterMode } from './types'
 import { OpenAITTSProvider } from '@/lib/providers/openAI'
 import { VoiceSelect } from '@/components/shared/VoiceSelect'
 
@@ -38,7 +29,6 @@ export const CaptionedVideoSlide = ({ slideUid, index }: CaptionedVideoSlideProp
   const deleteSlide = useCaptionedVideoStore((s) => s.deleteSlide)
   const updateSlideText = useCaptionedVideoStore((s) => s.updateSlideText)
   const updateSlideVoice = useCaptionedVideoStore((s) => s.updateSlideVoice)
-  const updateSlideCharacterMode = useCaptionedVideoStore((s) => s.updateSlideCharacterMode)
   const openCharacterPicker = useCaptionedVideoStore((s) => s.openCharacterPicker)
   const updateSlideImage = useCaptionedVideoStore((s) => s.updateSlideImage)
   const updateSlideAudioData = useCaptionedVideoStore((s) => s.updateSlideAudioData)
@@ -173,29 +163,13 @@ export const CaptionedVideoSlide = ({ slideUid, index }: CaptionedVideoSlideProp
           className="w-[100px] h-7"
           compact
         />
-        <div className="grow" />
-        {/* Character mode selector */}
-        <Select
-          value={slide.characterMode}
-          onValueChange={(v) => updateSlideCharacterMode(slideUid, v as CharacterMode)}
-        >
-          <SelectTrigger className="w-[100px] h-7 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="none">None</SelectItem>
-              <SelectItem value="custom">Custom</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Content */}
       <div className="flex gap-3">
         {/* Permanent image */}
         <div className="flex flex-col gap-1 shrink-0">
-          <Label className="text-xs text-center text-muted-foreground">Image</Label>
+          <Label className="text-xs text-center text-muted-foreground">Video</Label>
           <button
             onClick={handleImageUpload}
             className="relative w-[56px] h-[100px] bg-white rounded-lg overflow-hidden border border-neutral-200 group cursor-pointer hover:border-neutral-400 transition-colors"

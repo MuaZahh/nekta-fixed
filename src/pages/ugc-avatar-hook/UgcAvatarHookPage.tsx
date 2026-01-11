@@ -35,6 +35,8 @@ import { UgcAvatarHookVideo } from '@/remotion/templates/ugc-avatar-hook/UgcAvat
 import { UgcAvatarHookTimeline, ugcAvatarHookTimelineSchema, UgcClip } from '@/remotion/templates/ugc-avatar-hook/types'
 import { OpenAITTSProvider } from '@/lib/providers/openAI'
 import { useContentStore } from '@/lib/contentManager'
+import { useSettingsStore } from '@/state/settings'
+import { ApiKeysModal } from '@/components/shared/ApiKeysModal'
 import { CaptionsType, VerticalAlignmentType } from '@/remotion/types'
 
 const SECONDS_PER_WORD = 0.3
@@ -56,10 +58,34 @@ const HookBackgroundPicker: React.FC = () => {
   const store = useUgcAvatarHookStore()
   const items = useContentStore((s) => s.items)
   const [mediaServerPort, setMediaServerPort] = React.useState<number | null>(null)
+  const [uploadedVideos, setUploadedVideos] = React.useState<BackgroundMedia[]>([])
 
   useEffect(() => {
     window.ipcRenderer.invoke('GET_MEDIA_SERVER_PORT').then(setMediaServerPort)
   }, [])
+
+  useEffect(() => {
+    const loadUploaded = async () => {
+      const result = await window.ipcRenderer.invoke('GET_UPLOADED_BACKGROUNDS', { category: 'ugc' })
+      if (result.ok && result.items) {
+        const mapped = result.items.map((item: { uid: string; fileName: string; filePath: string; mimeType: string }): BackgroundMedia => {
+          const httpUrl = getHttpUrl(item.filePath, mediaServerPort)
+          return {
+            uid: item.uid,
+            name: item.fileName,
+            url: httpUrl,
+            thumbnailUrl: httpUrl,
+            type: 'video',
+            durationMs: 30000,
+          }
+        })
+        setUploadedVideos(mapped)
+      }
+    }
+    if (mediaServerPort) {
+      loadUploaded()
+    }
+  }, [mediaServerPort])
 
   const ugcBackgrounds = useMemo(() => {
     return items
@@ -77,8 +103,12 @@ const HookBackgroundPicker: React.FC = () => {
       })
   }, [items, mediaServerPort])
 
+  const allBackgrounds = useMemo(() => {
+    return [...uploadedVideos, ...ugcBackgrounds]
+  }, [uploadedVideos, ugcBackgrounds])
+
   const handleUpload = async () => {
-    const result = await window.ipcRenderer.invoke('SELECT_BACKGROUND_MEDIA')
+    const result = await window.ipcRenderer.invoke('SELECT_BACKGROUND_MEDIA', { category: 'ugc' })
     if (result.ok && result.mediaUrl) {
       const httpUrl = getHttpUrl(result.filePath, mediaServerPort)
       const newBackground: BackgroundMedia = {
@@ -89,6 +119,7 @@ const HookBackgroundPicker: React.FC = () => {
         type: 'video',
         durationMs: 30000,
       }
+      setUploadedVideos((prev) => [newBackground, ...prev])
       store.setHookBackground(newBackground)
     }
   }
@@ -112,7 +143,7 @@ const HookBackgroundPicker: React.FC = () => {
             <span className="text-[9px] text-neutral-500 mt-1">Upload</span>
           </button>
 
-          {ugcBackgrounds.map((media) => {
+          {allBackgrounds.map((media) => {
             const selected = isSelected(media.uid)
             return (
               <button
@@ -153,7 +184,7 @@ const ContentBackgroundUpload: React.FC<{ clipUid: string }> = ({ clipUid }) => 
   }, [])
 
   const handleUpload = async () => {
-    const result = await window.ipcRenderer.invoke('SELECT_BACKGROUND_MEDIA')
+    const result = await window.ipcRenderer.invoke('SELECT_BACKGROUND_MEDIA', { category: 'ugc' })
     if (result.ok && result.mediaUrl) {
       const httpUrl = getHttpUrl(result.filePath, mediaServerPort)
       const newBackground: BackgroundMedia = {
@@ -365,7 +396,10 @@ const MemoizedPlayer = React.memo(({ timeline, durationInFrames, aspectRatio }: 
 export const UgcAvatarHookPage = () => {
   const setRoute = useRouter((state) => state.setRoute)
   const store = useUgcAvatarHookStore()
+  const apiKeys = useSettingsStore((state) => state.apiKeys)
   const mediaServerPortRef = useRef<number | null>(null)
+  const [apiKeysModalOpen, setApiKeysModalOpen] = React.useState(false)
+  const [pendingAction, setPendingAction] = React.useState<'preview' | 'save' | null>(null)
 
   useEffect(() => {
     return () => store.reset()
@@ -681,6 +715,42 @@ export const UgcAvatarHookPage = () => {
     }
   }
 
+  const needsVoiceGeneration = store.hook.generateVoice || store.contentClips.some(c => c.generateVoice)
+  const hasRequiredApiKeys = !!apiKeys.openai?.trim()
+  const needsApiKeys = needsVoiceGeneration && !hasRequiredApiKeys
+
+  const handleGeneratePreviewClick = () => {
+    if (needsApiKeys) {
+      setPendingAction('preview')
+      setApiKeysModalOpen(true)
+      return
+    }
+    onGeneratePreview()
+  }
+
+  const handleSaveVideoClick = () => {
+    if (needsApiKeys) {
+      setPendingAction('save')
+      setApiKeysModalOpen(true)
+      return
+    }
+    onSaveVideo()
+  }
+
+  const handleApiKeysModalContinue = () => {
+    if (pendingAction === 'preview') {
+      onGeneratePreview()
+    } else if (pendingAction === 'save') {
+      onSaveVideo()
+    }
+    setPendingAction(null)
+  }
+
+  const handleApiKeysModalClose = () => {
+    setApiKeysModalOpen(false)
+    setPendingAction(null)
+  }
+
   const canGeneratePreview = store.hook.backgroundVideo && store.hook.text
 
   return (
@@ -833,7 +903,7 @@ export const UgcAvatarHookPage = () => {
               variant="default"
               className="border w-full max-w-[180px]"
               size="sm"
-              onClick={onGeneratePreview}
+              onClick={handleGeneratePreviewClick}
               disabled={!canGeneratePreview || store.previewGenerating}
             >
               {store.previewGenerating ? (
@@ -908,7 +978,7 @@ export const UgcAvatarHookPage = () => {
                 variant="default"
                 className="border w-full max-w-[180px]"
                 size="sm"
-                onClick={onSaveVideo}
+                onClick={handleSaveVideoClick}
                 disabled={!canGeneratePreview || store.previewGenerating || store.isRendering}
               >
                 <DownloadSimpleIcon />
@@ -918,6 +988,12 @@ export const UgcAvatarHookPage = () => {
           )}
         </div>
       </div>
+
+      <ApiKeysModal
+        open={apiKeysModalOpen}
+        onClose={handleApiKeysModalClose}
+        onContinue={handleApiKeysModalContinue}
+      />
     </div>
   )
 }

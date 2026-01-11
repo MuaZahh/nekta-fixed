@@ -23,7 +23,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { getModels, ModelResult, GetModelsResult } from '@/lib/modelHelpers'
+import { getModels, ModelResult } from '@/lib/modelHelpers'
 import { ArtStyles } from '@/data/contentStyles'
 import { VoiceSelect } from '@/components/shared/VoiceSelect'
 import { ArtStyleSelect } from '@/components/shared/ArtStyleSelect'
@@ -39,6 +39,7 @@ import { Timeline } from '@/remotion/templates/ai-video-basic/types'
 import { FPS, INTRO_DURATION } from '@/remotion/constants'
 import { TogetherAIImageGenProvider } from '@/lib/providers/togetherAI'
 import { GenerateStoryModal } from './ai-video/GenerateStoryModal'
+import { ApiKeysModal } from '@/components/shared/ApiKeysModal'
 import Chrome from '@uiw/react-color-chrome'
 
 
@@ -92,25 +93,17 @@ const generateStory = async (
 export const AIVideoPage = () => {
   const setRoute = useRouter((state) => state.setRoute)
   const apiKeys = useSettingsStore((state) => state.apiKeys)
-  const connectedProviders = useMemo(() => {
-    return Object.entries(apiKeys)
-      .filter(([, value]) => value && value.length > 0)
-      .map(([key]) => key)
-  }, [apiKeys])
 
-  const enabledModelsData = useMemo(() => {
-    const allModelsData = getModels({ ratios: [ASPECT_RATIO] })
-    const result: GetModelsResult = {}
-    for (const [providerId, providerData] of Object.entries(allModelsData)) {
-      if (connectedProviders.includes(providerId)) {
-        result[providerId] = providerData
-      }
-    }
-    return result
-  }, [connectedProviders])
+  const allModelsData = useMemo(() => {
+    return getModels({ ratios: [ASPECT_RATIO] })
+  }, [])
 
   const [slides, setSlides] = useState<AiVideoSlideType[]>([])
   const [wizardOpen, setWizardOpen] = useState(false)
+  const [apiKeysModalOpen, setApiKeysModalOpen] = useState(false)
+  const [pendingAction, setPendingAction] = useState<'preview' | 'save' | 'generate' | null>(null)
+  const [pendingSlideUid, setPendingSlideUid] = useState<string | null>(null)
+  const [pendingSlideAction, setPendingSlideAction] = useState<'image' | 'audio' | null>(null)
   const [isRendering, setIsRendering] = useState(false)
   const [renderProgress, setRenderProgress] = useState<RenderProgress | null>(null)
   const [renderError, setRenderError] = useState<RenderError | null>(null)
@@ -119,13 +112,13 @@ export const AIVideoPage = () => {
   const [imageModel, setImageModel] = useState<string>('')
 
   useEffect(() => {
-    const allModels = Object.values(enabledModelsData).flatMap(p => p.models)
+    const allModels = Object.values(allModelsData).flatMap(p => p.models)
     const isCurrentModelValid = allModels.some(m => m.modelId === imageModel)
 
     if (!isCurrentModelValid && allModels.length > 0) {
       setImageModel(allModels[0].modelId)
     }
-  }, [enabledModelsData, imageModel])
+  }, [allModelsData, imageModel])
 
   const [artStyle, setArtStyle] = useState<string>(DEFAULT_ART_STYLE)
   const [artStyleDesc, setArtStyleDesc] = useState<string>(DEFAULT_ART_STYLE_DESC)
@@ -427,6 +420,79 @@ export const AIVideoPage = () => {
     setTitle(storyTitle)
   }
 
+  const hasRequiredApiKeys = !!apiKeys.openai?.trim()
+
+  const handleGeneratePreviewClick = () => {
+    if (!hasRequiredApiKeys) {
+      setPendingAction('preview')
+      setApiKeysModalOpen(true)
+      return
+    }
+    onGeneratePreview()
+  }
+
+  const handleSaveVideoClick = () => {
+    if (!hasRequiredApiKeys) {
+      setPendingAction('save')
+      setApiKeysModalOpen(true)
+      return
+    }
+    onSaveVideo()
+  }
+
+  const handleGenerateStoryClick = () => {
+    if (!hasRequiredApiKeys) {
+      setPendingAction('generate')
+      setApiKeysModalOpen(true)
+      return
+    }
+    setWizardOpen(true)
+  }
+
+  const handleSlideGenerateImage = async (uid: string) => {
+    if (!hasRequiredApiKeys) {
+      setPendingSlideUid(uid)
+      setPendingSlideAction('image')
+      setApiKeysModalOpen(true)
+      return
+    }
+    await onGenerateImage(uid)
+  }
+
+  const handleSlideGenerateAudio = async (uid: string): Promise<{ audioUrl: string; isNew: boolean } | null> => {
+    if (!hasRequiredApiKeys) {
+      setPendingSlideUid(uid)
+      setPendingSlideAction('audio')
+      setApiKeysModalOpen(true)
+      return null
+    }
+    return onGenerateAudio(uid)
+  }
+
+  const handleApiKeysModalContinue = () => {
+    if (pendingAction === 'preview') {
+      onGeneratePreview()
+    } else if (pendingAction === 'save') {
+      onSaveVideo()
+    } else if (pendingAction === 'generate') {
+      setWizardOpen(true)
+    } else if (pendingSlideUid && pendingSlideAction === 'image') {
+      onGenerateImage(pendingSlideUid)
+    } else if (pendingSlideUid && pendingSlideAction === 'audio') {
+      onGenerateAudio(pendingSlideUid)
+    }
+    setPendingAction(null)
+    setPendingSlideUid(null)
+    setPendingSlideAction(null)
+  }
+
+  const handleApiKeysModalClose = () => {
+    setApiKeysModalOpen(false)
+    setPendingAction(null)
+    setPendingSlideUid(null)
+    setPendingSlideAction(null)
+  }
+
   return (
     <div className="flex flex-col h-full w-full">
       <PageHeader title="AI Video" />
@@ -478,7 +544,7 @@ export const AIVideoPage = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(enabledModelsData).map(([providerId, providerData]) => (
+                  {Object.entries(allModelsData).map(([providerId, providerData]) => (
                     <SelectGroup key={providerId}>
                       <SelectLabel>{providerData.providerName}</SelectLabel>
                       {providerData.models.map((m) => (
@@ -488,11 +554,6 @@ export const AIVideoPage = () => {
                       ))}
                     </SelectGroup>
                   ))}
-                  {Object.keys(enabledModelsData).length === 0 && (
-                    <SelectGroup>
-                      <SelectLabel className="text-neutral-400">No providers configured</SelectLabel>
-                    </SelectGroup>
-                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -512,7 +573,7 @@ export const AIVideoPage = () => {
         <Section
           title="Video Content"
           rightElement={
-            <Button variant="default" size="sm" className='h-7' onClick={() => setWizardOpen(true)}>
+            <Button variant="default" size="sm" className='h-7' onClick={handleGenerateStoryClick}>
               <SparkleIcon size={14} weight="fill" />
               Generate
             </Button>
@@ -537,8 +598,8 @@ export const AIVideoPage = () => {
                 onDelete={onDeleteSlide}
                 onTextChange={onTextChange}
                 onImageDescChange={onImageDescChange}
-                onGenerateImage={onGenerateImage}
-                onGenerateAudio={onGenerateAudio}
+                onGenerateImage={handleSlideGenerateImage}
+                onGenerateAudio={handleSlideGenerateAudio}
                 onImageUpload={onImageUpload}
               />
             ))}
@@ -594,7 +655,7 @@ export const AIVideoPage = () => {
               variant="default"
               className="border w-full max-w-[180px]"
               size="sm"
-              onClick={onGeneratePreview}
+              onClick={handleGeneratePreviewClick}
               disabled={!slides.length || previewGenerating}
             >
               {previewGenerating ? (
@@ -664,7 +725,7 @@ export const AIVideoPage = () => {
                 variant="default"
                 className="border w-full max-w-[180px]"
                 size="sm"
-                onClick={onSaveVideo}
+                onClick={handleSaveVideoClick}
                 disabled={!slides.length || previewGenerating || isRendering}
               >
                 <DownloadSimpleIcon />
@@ -679,6 +740,12 @@ export const AIVideoPage = () => {
         open={wizardOpen}
         onClose={() => setWizardOpen(false)}
         onGenerate={onGenerateStory}
+      />
+
+      <ApiKeysModal
+        open={apiKeysModalOpen}
+        onClose={handleApiKeysModalClose}
+        onContinue={handleApiKeysModalContinue}
       />
     </div>
   )

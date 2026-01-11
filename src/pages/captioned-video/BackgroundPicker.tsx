@@ -34,7 +34,7 @@ export const BackgroundPicker = () => {
 
   useEffect(() => {
     const loadUploaded = async () => {
-      const result = await window.ipcRenderer.invoke('GET_UPLOADED_BACKGROUNDS')
+      const result = await window.ipcRenderer.invoke('GET_UPLOADED_BACKGROUNDS', { category: 'background' })
       if (result.ok && result.items) {
         const mapped = result.items.map((item: { uid: string; fileName: string; filePath: string; mimeType: string }): BackgroundMedia => {
           const httpUrl = getHttpUrl(item.filePath, mediaServerPort)
@@ -83,7 +83,7 @@ export const BackgroundPicker = () => {
   }, [allBackgrounds, selectedBackground, setSelectedBackground])
 
   const handleUpload = async () => {
-    const result = await window.ipcRenderer.invoke('SELECT_BACKGROUND_MEDIA')
+    const result = await window.ipcRenderer.invoke('SELECT_BACKGROUND_MEDIA', { category: 'background' })
     if (result.ok && result.mediaUrl) {
       const httpUrl = getHttpUrl(result.filePath, mediaServerPort)
       const isImage = result.mimeType?.startsWith('image/')

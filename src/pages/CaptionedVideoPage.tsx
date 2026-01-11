@@ -20,10 +20,12 @@ import { CaptionedVideoSlide } from './captioned-video/CaptionedVideoSlide'
 import { CharacterPickerModal } from './captioned-video/CharacterPickerModal'
 import { BackgroundPicker } from './captioned-video/BackgroundPicker'
 import { GenerateContentModal } from './captioned-video/GenerateContentModal'
+import { ApiKeysModal } from '@/components/shared/ApiKeysModal'
 import { CaptionedVideo } from '@/remotion/templates/captioned-video/CaptionedVideo'
 import { CaptionedVideoTimeline, CaptionedVideoBackground, captionedVideoTimelineSchema } from '@/remotion/templates/captioned-video/types'
 import { OpenAITTSProvider } from '@/lib/providers/openAI'
 import { useCaptionedVideoStore } from './captioned-video/store'
+import { useSettingsStore } from '@/state/settings'
 
 const transformMediaUrl = (url: string | undefined, port: number | null): string | undefined => {
   if (!url || !port) return url
@@ -65,8 +67,11 @@ const MemoizedPlayer = React.memo(({ timeline, durationInFrames, aspectRatio }: 
 export const CaptionedVideoPage = () => {
   const setRoute = useRouter((state) => state.setRoute)
   const store = useCaptionedVideoStore()
+  const apiKeys = useSettingsStore((state) => state.apiKeys)
   const mediaServerPortRef = useRef<number | null>(null)
   const [generateModalOpen, setGenerateModalOpen] = useState(false)
+  const [apiKeysModalOpen, setApiKeysModalOpen] = useState(false)
+  const [pendingAction, setPendingAction] = useState<'generate' | 'preview' | 'save' | null>(null)
 
   useEffect(() => {
     return () => store.reset()
@@ -319,6 +324,51 @@ export const CaptionedVideoPage = () => {
     await renderVideo(generatedTimeline)
   }
 
+  const hasRequiredApiKeys = !!apiKeys.openai?.trim()
+
+  const handleGenerateClick = () => {
+    if (!hasRequiredApiKeys) {
+      setPendingAction('generate')
+      setApiKeysModalOpen(true)
+      return
+    }
+    setGenerateModalOpen(true)
+  }
+
+  const handleGeneratePreviewClick = () => {
+    if (!hasRequiredApiKeys) {
+      setPendingAction('preview')
+      setApiKeysModalOpen(true)
+      return
+    }
+    onGeneratePreview()
+  }
+
+  const handleSaveVideoClick = () => {
+    if (!hasRequiredApiKeys) {
+      setPendingAction('save')
+      setApiKeysModalOpen(true)
+      return
+    }
+    onSaveVideo()
+  }
+
+  const handleApiKeysModalContinue = () => {
+    if (pendingAction === 'generate') {
+      setGenerateModalOpen(true)
+    } else if (pendingAction === 'preview') {
+      onGeneratePreview()
+    } else if (pendingAction === 'save') {
+      onSaveVideo()
+    }
+    setPendingAction(null)
+  }
+
+  const handleApiKeysModalClose = () => {
+    setApiKeysModalOpen(false)
+    setPendingAction(null)
+  }
+
   return (
     <div className="flex flex-col h-full w-full">
       <PageHeader title="Captioned Video" />
@@ -362,7 +412,7 @@ export const CaptionedVideoPage = () => {
             <Section
               title="Video Content"
               rightElement={
-                <Button variant="default" size="sm" className="h-7" onClick={() => setGenerateModalOpen(true)}>
+                <Button variant="default" size="sm" className="h-7" onClick={handleGenerateClick}>
                   <SparkleIcon size={14} weight="fill" />
                   Generate
                 </Button>
@@ -411,7 +461,7 @@ export const CaptionedVideoPage = () => {
               variant="default"
               className="border w-full max-w-[180px]"
               size="sm"
-              onClick={onGeneratePreview}
+              onClick={handleGeneratePreviewClick}
               disabled={!store.slides.length || store.previewGenerating}
             >
               {store.previewGenerating ? (
@@ -486,7 +536,7 @@ export const CaptionedVideoPage = () => {
                 variant="default"
                 className="border w-full max-w-[180px]"
                 size="sm"
-                onClick={onSaveVideo}
+                onClick={handleSaveVideoClick}
                 disabled={!store.slides.length || store.previewGenerating || store.isRendering}
               >
                 <DownloadSimpleIcon />
@@ -501,6 +551,11 @@ export const CaptionedVideoPage = () => {
       <GenerateContentModal
         open={generateModalOpen}
         onClose={() => setGenerateModalOpen(false)}
+      />
+      <ApiKeysModal
+        open={apiKeysModalOpen}
+        onClose={handleApiKeysModalClose}
+        onContinue={handleApiKeysModalContinue}
       />
     </div>
   )
