@@ -72,8 +72,24 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 let win: BrowserWindow | null = null;
+let healthBeatInterval: NodeJS.Timeout | null = null;
 const preload = path.join(__dirname, "../preload/index.mjs");
 const indexHtml = path.join(RENDERER_DIST, "index.html");
+
+function startHealthBeat() {
+  const sendHealthBeat = () => {
+    net.fetch("http://api.nekta-studio.com/api/v1/app/status/health").catch(() => {});
+  };
+  sendHealthBeat();
+  healthBeatInterval = setInterval(sendHealthBeat, 60000);
+}
+
+function stopHealthBeat() {
+  if (healthBeatInterval) {
+    clearInterval(healthBeatInterval);
+    healthBeatInterval = null;
+  }
+}
 
 async function createWindow() {
   win = new BrowserWindow({
@@ -97,8 +113,6 @@ async function createWindow() {
     win.webContents.openDevTools();
   } else {
     win.loadFile(indexHtml);
-    // DEBUG: Uncomment to debug production builds
-    win.webContents.openDevTools();
   }
 
   // Catch renderer errors
@@ -272,10 +286,12 @@ app.whenReady().then(() => {
 
   createMenu();
   createWindow();
+  startHealthBeat();
 });
 
 app.on("window-all-closed", () => {
   win = null;
+  stopHealthBeat();
   if (process.platform !== "darwin") app.quit();
 });
 
@@ -293,6 +309,7 @@ app.on("activate", () => {
     allWindows[0].focus();
   } else {
     createWindow();
+    startHealthBeat();
   }
 });
 
