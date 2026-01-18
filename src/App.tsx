@@ -1,6 +1,6 @@
 import "./App.css";
 
-import { useEffect } from "react";
+import { ComponentType, useEffect } from "react";
 import { LoginScreen } from "./components/login/LoginScreen";
 import { Sidebar } from "./components/sidebar/Sidebar";
 import { BrowserDownloadModal } from "./components/browser-download/BrowserDownloadModal";
@@ -9,7 +9,7 @@ import { AppUpdateIndicator } from "./components/shared/AppUpdateIndicator";
 import { HomePage } from "./pages/HomePage";
 import { UgcAvatarHookPage } from "./pages/UgcAvatarHook";
 import { LibraryPage } from "./pages/LibraryPage";
-import { useRouter } from "./state/router";
+import { AppRoute, useRouter } from "./state/router";
 import { AIVideoPage } from "./pages/AIVideoPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { CaptionedVideoPage } from "./pages/CaptionedVideoPage";
@@ -18,8 +18,21 @@ import { MusicVisualizationPage } from "./pages/music-visualization/MusicVisuali
 import { GenerateImagePage } from "./pages/GenerateImagePage";
 import { contentManager } from "./lib/contentManager";
 
+const ROUTES: Partial<Record<AppRoute, ComponentType>> = {
+  'home': HomePage,
+  'ai-video': AIVideoPage,
+  'ugc-avatar-hook': UgcAvatarHookPage,
+  'library': LibraryPage,
+  'settings': SettingsPage,
+  'captioned-video': CaptionedVideoPage,
+  'video-slideshow': VideoSlideshowPage,
+  'music-visualization': MusicVisualizationPage,
+  'generate-image': GenerateImagePage,
+};
+
 function App() {
   const route = useRouter((state) => state.route);
+  const PageComponent = ROUTES[route] ?? HomePage;
 
   useEffect(() => {
     contentManager.initialize()
@@ -35,15 +48,7 @@ function App() {
       <Sidebar />
 
       <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 scrollbar-none">
-        {route === 'home' && <HomePage />}
-        {route === 'ai-video' && <AIVideoPage />}
-        {route === 'ugc-avatar-hook' && <UgcAvatarHookPage />}
-        {route === 'library' && <LibraryPage />}
-        {route === 'settings' && <SettingsPage />}
-        {route === 'captioned-video' && <CaptionedVideoPage />}
-        {route === 'video-slideshow' && <VideoSlideshowPage />}
-        {route === 'music-visualization' && <MusicVisualizationPage />}
-        {route === 'generate-image' && <GenerateImagePage />}
+        <PageComponent />
       </main>
     </div>
   );

@@ -78,7 +78,7 @@ const indexHtml = path.join(RENDERER_DIST, "index.html");
 
 function startHealthBeat() {
   const sendHealthBeat = () => {
-    net.fetch("http://api.nekta-studio.com/api/v1/app/status/health").catch(() => {});
+    net.fetch("https://api.nekta-studio.com/api/v1/app/status/health").catch(() => {});
   };
   sendHealthBeat();
   healthBeatInterval = setInterval(sendHealthBeat, 60000);
