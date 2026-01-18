@@ -25,10 +25,16 @@ export const LoginCanvas = () => {
     )
     camera.position.z = 8
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-    renderer.setSize(clientWidth, clientHeight)
-    renderer.setPixelRatio(window.devicePixelRatio)
-    renderer.setClearColor(0x000000, 0)
+    let renderer: THREE.WebGLRenderer
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+      renderer.setSize(clientWidth, clientHeight)
+      renderer.setPixelRatio(window.devicePixelRatio)
+      renderer.setClearColor(0x000000, 0)
+    } catch (error) {
+      console.warn('WebGL not available, LoginCanvas will not render:', error)
+      return
+    }
 
     containerRef.current.appendChild(renderer.domElement)
 
@@ -80,13 +86,17 @@ export const LoginCanvas = () => {
     window.addEventListener('resize', handleResize)
 
     return () => {
-      cancelAnimationFrame(frameId)
-      containerRef.current?.removeChild(renderer.domElement)
+      if (frameId) {
+        cancelAnimationFrame(frameId)
+      }
+      if (renderer) {
+        containerRef.current?.removeChild(renderer.domElement)
+        renderer.dispose()
+      }
       window.removeEventListener('resize', handleResize)
       containerRef.current?.removeEventListener('mousemove', onMouseMove)
       geometry.dispose()
       material.dispose()
-      renderer.dispose()
     }
   }, [])
 
