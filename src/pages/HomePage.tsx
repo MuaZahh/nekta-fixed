@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, AppRoute } from '../state/router'
 
-type ContentType = 'videos' | 'images'
+type ContentType = 'videos' | 'images' | 'agents'
 
 interface Suggestion {
   id: string
@@ -22,11 +22,15 @@ const suggestions: Record<ContentType, Suggestion[]> = {
   images: [
     { id: 'i1', title: 'Generate Image', description: 'Create images with AI from text descriptions', route: 'generate-image' },
   ],
+  agents: [
+    { id: 'a1', title: 'Coming Soon', description: 'Here you will be able to find different marketing agents' },
+  ],
 }
 
 const tabs: { id: ContentType; label: string }[] = [
   { id: 'videos', label: 'Videos' },
   { id: 'images', label: 'Images' },
+  { id: 'agents', label: 'Agents' },
 ]
 
 export const HomePage = () => {
