@@ -112,6 +112,10 @@ To use AI features (image/video generation, voiceover), you'll need API keys fro
 
 ---
 
+## Shoutouts
+
+- Videos are powered by amazing [Remotion](https://github.com/remotion-dev/remotion)
+
 ## License
 
 AGPL-3.0-only
