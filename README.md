@@ -1,3 +1,5 @@
+![Nekta promo](.github/images/promo_1.jpg)
+
 # Nekta AI Marketing Studio
 
 Nekta Marketing Studio is desktop app that creates short videos to promote your apps, products, music, and more. 100% free and open source. Works fully offline (unless you use AI for content generation) and includes built-in assets to get started right away.
