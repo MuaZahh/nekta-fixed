@@ -619,7 +619,7 @@ export const AIVideoPage = () => {
         </div>
 
         {/* Right Column - Video Preview */}
-        <div className="w-[30%] flex-shrink-0 border-l border-neutral-100 p-3 flex flex-col items-center justify-center overflow-hidden gap-2">
+        <div className="w-[30%] flex-shrink-0 border-l border-neutral-100 p-3 flex flex-col items-center justify-start overflow-y-auto gap-2">
           <Label>Preview</Label>
           {isPreviewGenerated && timeline && timeline.audio.length > 0 ? (
             <Player

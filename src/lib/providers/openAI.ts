@@ -68,15 +68,14 @@ export class OpenAITTSProvider implements TTSProvider {
       wordEndTimestampSeconds: []
     }
 
-    // Set last word end to audio duration to preseve pauses between sentences
-    transcription.words[transcription.words.length - 1].end = duration
-
-    if (transcription.words) {
+    if (transcription.words && transcription.words.length > 0) {
       for (const word of transcription.words) {
         timestamps.words.push(word.word)
         timestamps.wordStartTimestampSeconds.push(word.start)
         timestamps.wordEndTimestampSeconds.push(word.end)
       }
+      // Set last word end to audio duration to preserve pauses between sentences
+      timestamps.wordEndTimestampSeconds[timestamps.wordEndTimestampSeconds.length - 1] = duration
     }
 
     return {
